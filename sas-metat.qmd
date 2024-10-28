@@ -1,0 +1,197 @@
+---
+title: "Synoptic Arctic Survey 2021 - metatranscriptomics"
+author: "geweaa"
+date: '2024-10-24'
+format: html
+toc: true
+toc_float: true
+toc_depth: 3
+number_sections: true
+theme: sandstone
+monofont: AndaleMono
+fontsize: "10"
+highlight: textmate
+df_print: paged
+code-fold: true
+code-summary: "Expand code"
+self_contained: false
+keep_md: false
+encoding: "UTF-8"
+---
+
+
+```{r libraries, include=FALSE}
+library(tidyverse)
+source("../Protocols/theme.R")
+knitr::opts_chunk$set(cache = TRUE)
+```
+
+
+```{r read the meta-t files}
+tax <- read_tsv("data/eukulele/prodigal.megahit-estimated-taxonomy.out", show_col_types = F) %>%
+  select(-1) %>%
+  rename(orf = transcript_name) %>%
+  separate_wider_delim(full_classification, names = 
+                         c("domain", "phylum", "class", "order", "family", "genus", "species"), 
+                       delim = "; ", too_few = "align_start") %>%
+  group_by(orf) %>% slice_max(max_pid, n = 1) %>% ungroup() 
+
+tpm <- read_tsv("data/all_samples_counts.tsv.gz", show_col_types = F) %>% 
+  select(orf, sample, tpm) %>%
+  mutate(sample = gsub("R", ".", sample)) %>%
+  mutate(sample = factor(sample, levels = c(
+    "S1.1", "S1.2", "S2.1", "S2.2", "S3.1", "S3.2", "S4.1", "S4.2", "S5.1", "S5.2", 
+    "S6.1", "S6.2", "S7.1", "S7.2", "S8.1", "S8.2", "S9.1", "S9.2", "S10.1", "S10.2"
+  )))
+
+meta <- read_tsv("data/sample_key.tsv", show_col_types = FALSE) %>%
+  rename_with(tolower) %>%
+  mutate(station = as.character(station)) %>%
+  mutate(sample = gsub("R", ".", sample)) %>%
+  select(-`user id`, -`>=q30(%)`)
+```
+
+
+```{r read the eggnog data}
+eggnog <- read_tsv("data/eggnogs.tsv.gz", show_col_types = F) %>%
+  rename_with(tolower)
+```
+
+
+
+```{r define colors}
+cols.phylum <- c( # Sorted on abundance
+  "Proteobacteria" = "#C7B19C",
+  "Thermoproteota" = "#A2A475",
+  "Thermoplasmatota" = "#972D15",
+  "Cyanobacteria" = "#D69C4E",
+  "Bacteroidota" = "#FAEFD1",
+  "Marinisomatota" = "#00A08A",
+  "Chloroflexota" = "#D8B70A",
+  "Actinobacteriota" = "#1B5331",
+  "Other" = "#046C9A",
+  "Unidentified" = "#D5D5D3"
+)
+
+cols.station <- c(
+  "26" = "#446455",
+  "42" = "#FDD262",
+  "53" = "#D3DDDC",
+  "56" = "#C7B19C"
+)
+```
+
+
+```{r most abundant phyla for plotting}
+t <- tpm %>%
+  inner_join(tax, by = "orf") %>%
+  group_by(phylum, sample) %>%
+  # Sum the abundance of each phylum within a sample
+  summarise(tpm = sum(tpm), .groups = 'drop_last') %>%
+  # Calculate the mean abundance of each phylum over the categories
+  summarise(mean.tpm = sum(tpm), .groups = 'drop') %>%
+  filter(!is.na(phylum)) %>%
+  top_n(8, mean.tpm)
+
+t %>% arrange(desc(mean.tpm))
+```
+
+
+```{r prepare the taxonomy}
+taxref <- tax %>%
+  left_join(t %>% transmute(phylum, topphylum = phylum), by = "phylum") %>%
+  replace_na(list("topphylum" = "Other"))
+```
+
+
+```{r plot transcripts phylum, fig.width=14/2.53, fig.cap="This is a test to see if the caption appears"}
+lab <- meta %>% mutate(sample = gsub("\\.[1-2]", "", sample)) %>% mutate(sample = if_else(replicate == "b", "", sample)) %>% pull(sample)
+
+tpm %>%
+  left_join(taxref, by = "orf") %>%
+  replace_na(list("topphylum" = "Unidentified")) %>%
+  # Summarize in order to have the sum for each category and topphylum
+  group_by(sample, topphylum) %>% 
+  summarise(tpm = sum(tpm), .groups = 'drop') %>%
+  # Call the plot
+  ggplot(aes(x = sample, 
+             y = tpm, 
+             fill = fct_relevel(topphylum, names(cols.phylum) %>% rev())
+             )
+         ) +
+  labs(x = '', y = 'Relative abundance (tpm)', fill = "Phylum") +
+  geom_col() +
+  scale_x_discrete(labels = lab) +
+  scale_y_continuous(breaks = c(0, 250000, 500000, 750000, 1000000),
+                labels = c("0", "",
+                           expression("5"%*%"10"^"5"),
+                           "",
+                           expression("10"^"6"))
+                ) +
+  scale_fill_manual(values = cols.phylum) +
+  theme_tidy(ratio = 0.5) + 
+  theme(
+    axis.ticks.x = element_blank(),
+    legend.key.height = unit(3.5, "mm"),
+    legend.margin = margin(),
+    panel.border = element_rect(fill = "transparent", linewidth = 0.5),
+    axis.text.x = element_text(size = 7, hjust = 0)
+    )
+```
+
+
+```{r run the nmds without station five}
+set.seed(999)
+
+nmds <- tpm %>%
+  filter(!sample %in% c("S1.1", "S1.2", "S2.1", "S2.2")) %>%
+  # Sum the abundance of both coverage per metagenome
+  inner_join(eggnog, by = "orf") %>%
+  # Filter out NA and add multiple KOs on new line
+  filter(kegg_module != "-") %>% separate_rows(kegg_module, sep = ",") %>%
+  # Sum the abundance of each KO within the metagenomes
+  group_by(sample, kegg_module) %>% 
+  summarise(tpm = sum(tpm), .groups = "drop") %>%
+  # Pivot to prepare a numerical matrix
+  pivot_wider(names_from = "kegg_module", values_from = "tpm", values_fill = 0) %>%
+  column_to_rownames("sample") %>%
+  vegan::metaMDS()
+
+nmds
+```
+
+
+```{r extract nmds scores}
+nmds.scores <- vegan::scores(nmds)$sites %>%
+  as.data.frame() %>%
+  rownames_to_column("sample")
+```
+
+
+```{r plot the nmds, fig.width=12/2.53}
+nmds.scores %>%
+  inner_join(meta, by = "sample") %>%
+  # Plot
+  ggplot(aes(x = NMDS1, 
+             y = NMDS2, 
+             colour = station,
+             shape = depth
+             )) +
+  geom_vline(xintercept = 0, linetype = 'dotted', linewidth = 0.25) +
+  geom_hline(yintercept = 0, linetype = 'dotted', linewidth = 0.25) +
+  # Points for samples, coloured by site
+  geom_point(size = 2) +
+  scale_shape_discrete(labels = c("10 m", "Chl. max"), name = "") +
+  scale_color_manual(values = cols.station, name = "Station") +
+  theme_tidy() +
+  annotate('text', x = -Inf, y = -Inf, size = 7/.pt,
+           label = paste('Stress = ', round(nmds$stress, digits = 2)),
+           hjust = -0.1, vjust = -0.5) +
+  theme(
+    axis.title.y = element_text(margin = margin()),
+    panel.border = element_rect(linewidth = 0.75, colour = "black", fill = NA),
+    legend.text = element_text(margin = margin(l = 0)),
+    legend.box.margin = margin(l = -8)
+    )
+```
+

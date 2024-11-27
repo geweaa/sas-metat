@@ -1,6 +1,8 @@
 ---
 title: "Synoptic Arctic Survey 2021 - metatranscriptomics"
 author: "geweaa"
+bibliography: references.bib
+csl: diabetologia.csl
 date: now
 format: html
 toc: true
@@ -24,8 +26,10 @@ other-links:
         href: https://github.com/geweaa/sas-metat
       - text: Nf-core/metatdenovo
         href: https://nf-co.re/metatdenovo/1.0.1/
-      - text: Nature guidelines Figures
+      - text: Nature guidelines on figures
         href: https://research-figure-guide.nature.com/figures/preparing-figures-our-specifications/
+      - text: The English Bookshop
+        href: https://bookshop.se
 ---
 
 
@@ -46,6 +50,8 @@ The file params.yaml contained the following relevant parameters:
     project: naiss2024-22-406
 
 Apart from this, the pipeline was run on default parameters. GTDB release 220 was used for taxonomic annotation.
+
+For more information, see [-@Pfiffner2006]
 
 
 ```{r read the taxonomy, message=FALSE}
@@ -70,7 +76,8 @@ meta <- read_tsv("data/sample_key.tsv", show_col_types = FALSE) %>%
   mutate(sample = factor(sample, levels = c(
     "S1.1", "S1.2", "S2.1", "S2.2", "S3.1", "S3.2", "S4.1", "S4.2", "S5.1", "S6.1", 
     "S5.2", "S6.2", "S7.1", "S7.2", "S8.1", "S8.2", "S9.1", "S9.2", "S10.1", "S10.2"
-  )))
+  ))) %>%
+  mutate(depth = factor(depth, levels = c("chlMax", "10m")))
 ```
 
 In total, there are `r nrow(meta)` metatranscriptomes from five stations. At every station, samples were taken in duplicates from 10 m depth and from chl. max. On average, each sample has `r round(mean(meta$mreads), digits = 1)` million reads (sd `r sd(meta$mreads) %>% round(digits = 1)`, n = 20). Off all the transcripts, 53.0 % was functionally annotated (Eggnog mapper), 36.5 % was functionally annotated including a KO reference, 45.7 % of the transcripts was annotated on phylum level, 45.7 % on order level, 44.8 % on genus level, and 32.7 % on species level. 
@@ -555,14 +562,7 @@ eggnog %>%
 ```
 
 
-```{r}
-eggnog %>%
-  filter(kegg_module != "-") %>%
-  inner_join(tpm, by = "orf") %>%
-  group_by(kegg_module) %>% summarise(tpm = sum(tpm), .groups = "drop") %>%
-  slice_max(tpm, n = 20) %>%
-  knitr::kable()
-```
+
 
 
 The gene list is from Royo-Llonch et al. (https://doi.org/10.1038/s41564-021-00979-9). It contains the KEGG ortholog (KO) and the pathway the gene is involved in. KOs of interest in the data that are not represented in the gene list are manually categorized.
@@ -575,8 +575,27 @@ genelist <- read_tsv("data/genelist.txt", show_col_types = FALSE) %>%
 
 
 ```{r}
-#| fig-cap: The six carbon fixation pathways and the summed tpm from all of the samples (n = 10 for each depth layer). These pathways were categorized based on KOs with three to five KOs per pathways as marker genes.
+eggnog %>%
+  separate_longer_delim(kegg_ko, delim = ",") %>%
+  inner_join(genelist, by = "kegg_ko") %>%
+  filter(kegg_ko %in% c(
+    "K01601", # ribulose-bisphosphate carboxylase large chain - EC:4.1.1.39 - Calvin cycle
+    "K09709", # 3-methylfumaryl-CoA hydratase - EC:4.2.1.153 - 3-hydroxypropionate bi-cycle
+    "K15019", # 3-hydroxypropionyl-coenzyme A dehydratase - EC:4.2.1.116 - HP/HB cycle
+    "K00175", # 2-oxoglutarate/2-oxoacid ferredoxin oxidoreductase subunit beta - EC:1.2.7.3 1.2.7.11 - Reverse TCA cycle
+    "K14534", # 4-hydroxybutyryl-CoA dehydratase / vinylacetyl-CoA-Delta-isomerase - EC:4.2.1.120 5.3.3.3 - DC/HB cycle
+    "K00198"  # anaerobic carbon-monoxide dehydrogenase catalytic subunit - EC:1.2.7.4 - Wood-Ljungdahl
+  )) %>%
+  inner_join(tax, by = "orf") %>% inner_join(tpm, by = "orf", relationship = "many-to-many") %>% inner_join(meta, by = "sample") %>%
+  group_by(pathway, genus, depth) %>% summarise(tpm = sum(tpm), .groups = "drop") %>% filter(genus == "Nitrosopumilus")
+```
+
+
+
+```{r, fig.width=10/2.53}
+#| fig-cap: The six carbon fixation pathways and the summed tpm from all of the samples (n = 10 for each depth layer). These pathways were categorized based on KOs with one KO per pathway as a marker gene.
 #| label: fig-cfix
+#| out-width: 100%
 
 eggnog %>%
   separate_longer_delim(kegg_ko, delim = ",") %>%
@@ -588,8 +607,16 @@ eggnog %>%
     pathway == "Reductive citrate cycle (rTCA cycle; Arnon-Buchanan cycle)" ~ "Reverse TCA cycle",
     pathway == "Hydroxypropionate-hydroxybutylate cycle/ Dicarboxylate-hydroxybutyrate cycle" ~ "DC/HB cycle",
     pathway == "Calvin Cycle" ~ "Calvin cycle",
-    .default = "Banana bread"
-  )) %>% filter(pathway != "Banana bread") %>%
+    .default = pathway
+  )) %>%
+  filter(kegg_ko %in% c(
+    "K01601", # ribulose-bisphosphate carboxylase large chain - EC:4.1.1.39 - Calvin cycle
+    "K09709", # 3-methylfumaryl-CoA hydratase - EC:4.2.1.153 - 3-hydroxypropionate bi-cycle
+    "K15019", # 3-hydroxypropionyl-coenzyme A dehydratase - EC:4.2.1.116 - HP/HB cycle
+    "K00175", # 2-oxoglutarate/2-oxoacid ferredoxin oxidoreductase subunit beta - EC:1.2.7.3 1.2.7.11 - Reverse TCA cycle
+    "K14534", # 4-hydroxybutyryl-CoA dehydratase / vinylacetyl-CoA-Delta-isomerase - EC:4.2.1.120 5.3.3.3 - DC/HB cycle
+    "K00198"  # anaerobic carbon-monoxide dehydrogenase catalytic subunit - EC:1.2.7.4 - Wood-Ljungdahl
+  )) %>%
   inner_join(tax, by = "orf") %>% inner_join(tpm, by = "orf", relationship = "many-to-many") %>% inner_join(meta, by = "sample") %>%
   group_by(pathway, domain, depth) %>% summarise(tpm = sum(tpm), .groups = "drop") %>%
   mutate(depth = factor(depth, levels = c("chlMax", "10m"))) %>%
@@ -600,14 +627,17 @@ eggnog %>%
     group = depth,
     fill = depth
   )) +
-  geom_col(position = position_dodge(width = 0.95)) + labs(x = "Tpm", y = "") +
+  geom_col(position = position_dodge(width = 0.95)) + labs(x = "Relative abundance (tpm)", y = "") +
   guides(fill = guide_legend(reverse = TRUE)) +
   scale_fill_manual(values = c("#046C9A", "#78B7C5"), 
                     labels = c("10m" = "10 m", "chlMax" = "Chl. max")
                     ) +
+  annotate("text", x = 3500, y = 3.75, label = "98.3 % Nitrosopumilus sp.", hjust = 0, size = 7 / .pt) + # Chl. max
+  annotate("text", x = 1000, y = 4.26, label = "97.8 % Nitrosopumilus sp.", hjust = 0, size = 7 / .pt) + # 10 m
+  theme_tidy(fontsize = 7, ratio = 0.8) +
   theme(
     legend.position = "inside",
-    legend.position.inside = c(0.9, 0.15),
+    legend.position.inside = c(0.8, 0.2),
     axis.ticks.y = element_blank(),
     legend.title = element_blank()
   )
@@ -665,7 +695,9 @@ de <- topTags(qlf, adjust.method = "fdr", n = Inf) %>%
     fdr < 0.05 & logfc < 0 ~ "down",
     .default = "non-de"
   )) %>%
-  inner_join(eggnog, by = "kegg_ko")
+  inner_join(eggnog, by = "kegg_ko") %>%
+  inner_join(tax, by = "orf") %>%
+  filter(expression != "non-de")
 ```
 
 As the contrast was shallow vs deep, upregulated means significantly higher in the shallow samples while downregulated means higher in the deeper samples. There are `r de %>% filter(expression == "up") %>% pull(kegg_ko) %>% unique() %>% length()` KOs up regulated and `r de %>% filter(expression == "down") %>% pull(kegg_ko) %>% unique() %>% length()` KOs down regulated. `r de %>% filter(expression == "non-de") %>% pull(kegg_ko) %>% unique() %>% length()` KOs were not differential expressed.
@@ -690,13 +722,12 @@ cols.genus <- c(
   "Rhizobiales uncl. uncl." = "#D5D5D3"
 )
   
+# There are multiple ORFs for a KO differential expressed
 
-top.de <- de %>%
-  filter(expression != "non-de") %>%
-  inner_join(tax, by = "orf") %>% inner_join(tpm, by = "orf") %>%
-  filter(genus %in% t) %>%
-  group_by(genus, kegg_ko, expression) %>% summarise(logfc = mean(logfc), .groups = "drop") %>%
-  group_by(expression) %>% slice_max(abs(logfc), n = 25) %>% ungroup()
+top.ko <- de %>%
+  select(kegg_ko, pvalue, expression) %>% distinct() %>%
+  group_by(expression) %>% slice_min(pvalue, n = 20) %>% ungroup() %>%
+  pull(kegg_ko)
 ```
 
 The 25 KOs with the lowest (up in deeper samples) and 25 with the highest log fold-change are selected. Six of these KOs are represented in the gene list, the other 19 will be manually categorized. The number of 25 was arbitrary chosen. Many of these KOs are affiliated with the archaeon Nitrosopumilus that oxidizes ammonium and is capable of autotrophic growth using the hydroxypropionate/hydroxybutyrate cycle that is more energy efficient than other aerobic C fixation pathways, including the Calvin cycle (source: https://doi.org/10.1073/pnas.1402028111). The fact that C fixation KOs affiliated with this genus are abundantly detected strongly suggests autotrophic growth, possibly due to a low concentration of organic carbon.
@@ -761,8 +792,9 @@ top.de <- top.de %>%
 #| fig-cap: Differentially expressed orthologous genes (KOs) between 10 m depth and chlorophyll max (between 20 and 45 m depth). A positive fold change indicates the KO was detected in significant higher numbers at 10 m depth, while a negative value indicates higher numbers at chlorophyll max.
 #| label: fig-de
 
-top.de %>%
-  mutate(kegg_ko = paste(kegg_ko, pathway, sep = ": ")) %>%
+de %>%
+  filter(kegg_ko %in% top.ko) %>% filter(genus %in% t) %>%
+  #mutate(kegg_ko = paste(kegg_ko, pathway, sep = ": ")) %>%
   ggplot(aes(x = logfc, 
              y = kegg_ko, 
              fill = genus
@@ -777,6 +809,111 @@ top.de %>%
     legend.key.height = unit(3.5, "mm"),
     legend.key.spacing.y = unit(0, "mm"),
     panel.border = element_rect(fill = "transparent", linewidth = unit(0.5, "mm"))
+  )
+```
+
+
+# C, N, P, and S cycling
+
+```{r n.cycling}
+n <- eggnog %>% 
+  #separate_longer_delim(kegg_ko, delim = ",") %>% # This is equivalent to using grepl() for selecting the KOs
+  filter(kegg_ko != "-") %>%
+  left_join(genelist %>% filter(metabolism == "Nitrogen metabolism"), by = "kegg_ko") %>% select(kegg_ko, orf, pathway) %>%
+  mutate(pathway = case_when(
+  kegg_ko %in% c("K10944","K10945","K10946") ~ "Ammonia monooxygenase (AmoABC)",
+  kegg_ko == "K03320" ~ "Ammonium transporter (amt)",
+  kegg_ko %in% c("K02586","K02588","K02591") ~ "Nitrogen fixation (nifDHK)",
+  .default = pathway
+)) %>% filter(!is.na(pathway)) %>%
+  inner_join(tax, by = "orf") %>% inner_join(tpm, by = "orf", relationship = "many-to-many") 
+```
+
+
+```{r}
+n %>%
+  inner_join(meta, by = "sample") %>%
+  filter(phylum %in% names(cols.phylum)) %>%
+  ggplot(aes(x = tpm, y = pathway, fill = phylum, group = depth)) +
+  geom_col(position = position_dodge(width = 0.95)) + 
+  scale_fill_manual(values = cols.phylum) +
+  labs(x = "Relative abundance (tpm)", y = "") +
+  theme(
+    legend.title = element_blank(),
+    axis.ticks.y = element_blank()
+  )
+```
+
+```{r}
+s <- eggnog %>% 
+  filter(kegg_ko != "-") %>%
+  inner_join(genelist %>% filter(metabolism == "Sulfur metabolism"), by = "kegg_ko") %>% select(kegg_ko, orf, pathway) %>%
+  inner_join(tax, by = "orf") %>% inner_join(tpm, by = "orf", relationship = "many-to-many")
+
+s %>%
+  filter(phylum %in% names(cols.phylum)) %>%
+  ggplot(aes(x = tpm, y = pathway, fill = phylum)) +
+  geom_col() + scale_fill_manual(values = cols.phylum) +
+  labs(x = "Relative abundance (tpm)", y = "") +
+  theme(
+    legend.title = element_blank(),
+    axis.ticks.y = element_blank()
+  )
+```
+
+
+The genes listed below are typically catalyze the rate limiting step of the pathway. Like all other analysis, filtering is done based on the KOs and grouping of the KOs is avoided.
+
+```{r}
+c <- eggnog %>%
+  filter(kegg_ko != "-") %>%
+  select(kegg_ko, orf) %>% mutate(pathway = case_when(
+    kegg_ko == "K01637" ~ "Glyoxylate cycle: isocitrate lyase",
+    kegg_ko == "K13937" ~ "Pentose phosphate pathway: G6P dehydrogenase",
+    kegg_ko == "K00850" ~ "Glycolysis: PFK",
+    kegg_ko == "K01690" ~ "Entner-Doudoroff pathway: phosphogluconate dehydratase",
+    kegg_ko == "K00031" ~ "Citric acid cycle: isocitrate dehydrogenase",
+    kegg_ko == "K18981" ~ "Uronate pathway: uronate dehydrogenase",
+    kegg_ko == "K00948" ~ "PRPP biosynthesis: ribose-phosphate pyrophosphokinase",
+    .default = NA
+  )) %>% filter(!is.na(pathway)) %>%
+  inner_join(tax, by = "orf") %>% inner_join(tpm, by = "orf", relationship = "many-to-many")
+
+c %>%
+  inner_join(meta, by = "sample") %>%
+  filter(phylum %in% names(cols.phylum)) %>%
+  ggplot(aes(x = tpm, y = pathway, fill = phylum, group = depth)) +
+  geom_col(position = position_dodge(width = 0.95)) + scale_fill_manual(values = cols.phylum) +
+  labs(x = "Relative abundance (tpm)", y = "") +
+  theme(
+    legend.title = element_blank(),
+    axis.ticks.y = element_blank()
+  )
+```
+
+```{r}
+ps <- eggnog %>%
+  filter(kegg_ko != "-") %>%
+  select(kegg_ko, orf) %>% mutate(pathway = case_when(
+    kegg_ko == "K02703" ~ "Photosystem II psbA",
+    kegg_ko == "K02712" ~ "Photosystem II psbK",
+    kegg_ko == "K02707" ~ "Photosystem II psbE",
+    kegg_ko == "K02697" ~ "Photosystem I psaJ",
+    kegg_ko == "K02274" ~ "Cytochrome c oxidase subunit I",
+    kegg_ko == "K02256" ~ "Cytochrome c oxidase subunit 1",
+    .default = NA
+  )) %>% filter(!is.na(pathway)) %>%
+  inner_join(tax, by = "orf") %>% inner_join(tpm, by = "orf", relationship = "many-to-many")   
+
+ps %>% 
+  inner_join(meta, by = "sample") %>%
+  filter(phylum %in% names(cols.phylum)) %>%
+  ggplot(aes(x = tpm, y = pathway, fill = phylum, group = depth)) +
+  geom_col(position = position_dodge(width = 0.95)) + scale_fill_manual(values = cols.phylum) +
+  labs(x = "Relative abundance (tpm)", y = "") +
+  theme(
+    legend.title = element_blank(),
+    axis.ticks.y = element_blank()
   )
 ```
 

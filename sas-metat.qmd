@@ -51,9 +51,6 @@ The file params.yaml contained the following relevant parameters:
 
 Apart from this, the pipeline was run on default parameters. GTDB release 220 was used for taxonomic annotation.
 
-For more information, see [-@Pfiffner2006]
-
-
 ```{r read the taxonomy, message=FALSE}
 tax <- read_tsv("data/megahit.prokka.gtdb_taxonomy.tsv.gz", show_col_types = F)
 ```
@@ -144,7 +141,14 @@ cols.station <- c(
 
 # Data exploration
 
+@fig-domain depicts the ratio between bacteria and archaea for both depth layers. Note how the abundance of archaea is slightly higher in most of the deeper samples (chlorophyll max depth). 
+
 ```{r}
+#| fig-cap: Community overview on domain level, removing transcripts without a taxonomic annotation.
+#| label: fig-domain
+#| out-width: 100%
+#| fig-width: 4.75
+
 tpm %>%
   inner_join(tax, by = "orf") %>%
   inner_join(meta, by = "sample") %>%
@@ -159,7 +163,7 @@ tpm %>%
     y = tpm,
     fill = domain
   )) +
-  geom_col() + 
+  geom_col() + theme_tidy(ratio = 0.7) +
   scale_y_continuous(breaks = c(0, 2e5, 4e5), labels = c(0, 2, 4)) +
   labs(y = expression('Relative abundance (tpm '%*% '10'^'5'*')')) + 
   scale_fill_manual(values = c("Bacteria" = "#C7B19C", "Archaea" = "#A2A475")) +
@@ -170,15 +174,17 @@ tpm %>%
     axis.ticks.x = element_blank(),
     axis.text.x = element_blank()
   ) +
-  annotate("segment", x =  0.55, xend =  10.45, y = -25000, yend = -25000) +
-  annotate("segment", x =  10.55, xend = 20.45, y = -25000, yend = -25000) +
-  annotate("label", x = 5, y = -25000, label = "10 m", label.size = 0, size = 7/.pt) +
-  annotate("label", x = 15, y = -25000, label = "Chl. max", label.size = 0, size = 7/.pt)
+  annotate("segment", x =  0.55, xend =  10.45, y = -15000, yend = -15000) +
+  annotate("segment", x =  10.55, xend = 20.45, y = -15000, yend = -15000) +
+  annotate("label", x = 5, y = -17000, label = "10 m", label.size = 0, size = 7/.pt) +
+  annotate("label", x = 15, y = -17000, label = "Chl. max", label.size = 0, size = 7/.pt)
 ```
 
 
 
 ```{r most abundant phyla for plotting}
+#| tbl-cap: The eight most abundant phyla of all samples, based on summed TPM. Most are bacterial phyla, except for the archaeal phyla Thermoproteota and Thermoplasmatota. 
+
 t <- tpm %>%
   inner_join(tax, by = "orf") %>%
   group_by(phylum, sample) %>%
@@ -193,7 +199,7 @@ t %>% arrange(desc(mean.tpm)) %>% knitr::kable()
 ```
 
 
-```{r prepare the taxonomy}
+```{r prepare the taxonomy, include=FALSE}
 taxref <- tax %>%
   left_join(t %>% transmute(phylum, topphylum = phylum), by = "phylum") %>%
   replace_na(list("topphylum" = "Other"))
@@ -253,6 +259,8 @@ tpm %>%
 
 
 ```{r most abundant orders for plotting}
+#| tbl-cap: The eight most abundant orders, after summing the TPM of all the samples.
+
 t <- tpm %>%
   inner_join(tax, by = "orf") %>%
   group_by(order, sample) %>%
@@ -261,20 +269,20 @@ t <- tpm %>%
   # Calculate the mean abundance of each phylum over the categories
   summarise(mean.tpm = sum(tpm), .groups = 'drop') %>%
   filter(!is.na(order)) %>%
-  top_n(9, mean.tpm)
+  top_n(8, mean.tpm)
 
 t %>% arrange(desc(mean.tpm)) %>% knitr::kable()
 ```
 
 
-```{r prepare the taxonomy - order}
+```{r prepare the taxonomy - order, include=FALSE}
 taxref <- tax %>%
   left_join(t %>% transmute(order, topphylum = order), by = "order") %>%
   replace_na(list("topphylum" = "Other"))
 ```
 
 
-@fig-order explores the data by plotting the most abundant orders over all samples, regardless if the RNA transcript was functionally annotated or not.
+@fig-order explores the data by plotting the most abundant orders over all samples, regardless if the RNA transcript was functionally annotated or not. Note that transcripts without a taxonomic annotation (the unidentified fraction in @fig-phylum) are not included in this figure. It clearly shows how the Nitrosphaerales are more abundant in the deeper layer.
 
 
 ```{r}
@@ -345,7 +353,7 @@ t %>% left_join(tax, by = "genus") %>%
 ```
 
 
-```{r}
+```{r, include=FALSE}
 t <- tpm %>%
   inner_join(tax, by = "orf") %>%
   group_by(genus, sample) %>%
@@ -359,7 +367,6 @@ t <- tpm %>%
 
 
 @fig-genus shows the most abundant genera. It reveals how some genera (e.g. Pelagibacter and Ketobacter) are more abundant (and active) in the 10 m depth, while for example Nitrosopumilus is more abundant in the deeper sites. Note from the metadata that the depth of chlorophyll max strongly varies between the stations.
-
 
 
 ```{r}
@@ -534,7 +541,8 @@ library(patchwork)
 ```
 
 
-@fig-nmds depicts the results on the NMDS for all stations (a) and for the NMDS with station 5 removed (b). The shape of the sample depicts the depth of the sample. Note that there is a considerable variations among the depth of chlorophyll max. For example, the chl. max. of station 56 is at 20 m, while chl. max of station 42 is at 45 m depth. Possibly this could be an explanation why the four samples of the two depths from station 56 are more similar? 
+@fig-nmds depicts the results on the NMDS for all stations (a) and for the NMDS with station 5 removed (b). The shape of the sample depicts the depth of the sample. Note that there is a considerable variations among the depth of chlorophyll max. For example, the chl. max. of station 56 is at 20 m, while chl. max of station 42 is at 45 m depth. Possibly this could be an explanation why the four samples of the two depths from station 56 are more similar?
+
 
 ```{r}
 #| label: fig-nmds
@@ -553,43 +561,26 @@ p1 + p2 + plot_layout(guides = "collect") + plot_annotation(tag_levels = c("a", 
 
 
 ```{r}
+#| tbl-cap: The most abundant KEGG orthologs (KO), their description (from Eggnog), and the summed tpm of each KO.
+ 
 eggnog %>%
   filter(kegg_ko != "-") %>%
   inner_join(tpm, by = "orf") %>%
   group_by(kegg_ko, description) %>% summarise(tpm = sum(tpm), .groups = "drop") %>%
-  slice_max(tpm, n = 50) %>%
-  knitr::kable()
+  slice_max(tpm, n = 20) %>%
+  knitr::kable(digits = 0, format = "simple")
 ```
 
 
 
+The gene list is from Royo-Llonch et al. [-@royo2021compendium]. It contains the KEGG ortholog (KO) and the pathway the gene is involved in. KOs of interest in the data that are not represented in the gene list are manually categorized. @fig-cfix shows the RNA transcripts for the carbon fixation pathways for each depth layer. To do so, one KO catalyzing the rate-limiting reaction was selected for each pathway. The Wood-Ljungdahl pathway was also included in this analysis but the representing KO was not detected, or the detected KO did not have a taxonomic annotation. 
 
 
-The gene list is from Royo-Llonch et al. (https://doi.org/10.1038/s41564-021-00979-9). It contains the KEGG ortholog (KO) and the pathway the gene is involved in. KOs of interest in the data that are not represented in the gene list are manually categorized.
-
-```{r}
+```{r, include=FALSE}
 genelist <- read_tsv("data/genelist.txt", show_col_types = FALSE) %>%
   rename_with(tolower) %>%
   rename(kegg_ko = ko_id)
 ```
-
-
-```{r}
-eggnog %>%
-  separate_longer_delim(kegg_ko, delim = ",") %>%
-  inner_join(genelist, by = "kegg_ko") %>%
-  filter(kegg_ko %in% c(
-    "K01601", # ribulose-bisphosphate carboxylase large chain - EC:4.1.1.39 - Calvin cycle
-    "K09709", # 3-methylfumaryl-CoA hydratase - EC:4.2.1.153 - 3-hydroxypropionate bi-cycle
-    "K15019", # 3-hydroxypropionyl-coenzyme A dehydratase - EC:4.2.1.116 - HP/HB cycle
-    "K00175", # 2-oxoglutarate/2-oxoacid ferredoxin oxidoreductase subunit beta - EC:1.2.7.3 1.2.7.11 - Reverse TCA cycle
-    "K14534", # 4-hydroxybutyryl-CoA dehydratase / vinylacetyl-CoA-Delta-isomerase - EC:4.2.1.120 5.3.3.3 - DC/HB cycle
-    "K00198"  # anaerobic carbon-monoxide dehydrogenase catalytic subunit - EC:1.2.7.4 - Wood-Ljungdahl
-  )) %>%
-  inner_join(tax, by = "orf") %>% inner_join(tpm, by = "orf", relationship = "many-to-many") %>% inner_join(meta, by = "sample") %>%
-  group_by(pathway, genus, depth) %>% summarise(tpm = sum(tpm), .groups = "drop") %>% filter(genus == "Nitrosopumilus")
-```
-
 
 
 ```{r, fig.width=10/2.53}
@@ -648,6 +639,8 @@ eggnog %>%
 
 # Differential gene expression using edgeR
 
+This analysis helps to identify differentially expressed genes between the 10 m depth and the chlorophyll max depth. Station 5 is not included in the analysis as it introduces too much noise.
+
 ```{r}
 library(edgeR)
 
@@ -670,6 +663,7 @@ dge <- tpm %>%
   DGEList(group = meta %>% filter(station != 5) %>% pull(depth), lib.size = colSums(m))
 ```
 
+The chunk below is to create the design matrix, make the contract, and run the actual analysis using the functions glmQLfit() and glmQLFTest()
 
 ```{r}
 design.mat <- model.matrix(~ 0 + meta %>% filter(station != 5) %>% arrange(sample) %>% pull(depth))
@@ -685,6 +679,7 @@ dge <- dge %>%
 qlf <- glmQLFTest(dge, contrast = contrast)
 ```
 
+The p-values are adjusted according to the false discovery rate, and the DE genes are joined with the functional and taxonomic annotation.
 
 ```{r}
 de <- topTags(qlf, adjust.method = "fdr", n = Inf) %>%
@@ -697,18 +692,12 @@ de <- topTags(qlf, adjust.method = "fdr", n = Inf) %>%
   )) %>%
   inner_join(eggnog, by = "kegg_ko") %>%
   inner_join(tax, by = "orf") %>%
-  filter(expression != "non-de")
+  filter(expression != "non-de") %>% tibble()
 ```
 
 As the contrast was shallow vs deep, upregulated means significantly higher in the shallow samples while downregulated means higher in the deeper samples. There are `r de %>% filter(expression == "up") %>% pull(kegg_ko) %>% unique() %>% length()` KOs up regulated and `r de %>% filter(expression == "down") %>% pull(kegg_ko) %>% unique() %>% length()` KOs down regulated. `r de %>% filter(expression == "non-de") %>% pull(kegg_ko) %>% unique() %>% length()` KOs were not differential expressed.
 
 ```{r}
-t <- de %>%
-  filter(expression != "non-de") %>%
-  inner_join(tax, by = "orf") %>% inner_join(tpm, by = "orf") %>%
-  group_by(genus) %>% summarise(tpm = sum(tpm), .groups = "drop") %>% slice_max(tpm, n = 10) %>%
-  pull(genus)
-
 cols.genus <- c(
   "Pseudothioglobus" = "#C7B19C",
   "AG-430-B22" = "#A2A475",
@@ -717,23 +706,59 @@ cols.genus <- c(
   "Alteromonadaceae uncl." = "#FAEFD1",
   "ASP10-02a" = "#00A08A",
   "Sneathiella" = "#D8B70A",
-  "Planktomarina" = "#1B5331",
-  "Sneathiellaceae uncl." = "#046C9A",
-  "Rhizobiales uncl. uncl." = "#D5D5D3"
+  "AG-337-I02" = "#1B5331",
+  "AG-430-B22" = "#D5D5D3",
+  "Other" = "#046C9A"
 )
   
-# There are multiple ORFs for a KO differential expressed
-
-top.ko <- de %>%
-  select(kegg_ko, pvalue, expression) %>% distinct() %>%
-  group_by(expression) %>% slice_min(pvalue, n = 20) %>% ungroup() %>%
-  pull(kegg_ko)
+cols.order <- c( # Sorted on abundance
+  "Rhizobiales_B" = "#D69C4E",
+  "Pelagibacterales" = "#972D15",
+  "Rhodobacterales" = "#D8B70A",
+  "Rhodospirillales" = "#00A08A",
+  "Pseudomonadales" = "#C7B19C",
+  "Rhizobiales" = "#D5D5D3",
+  "HIMB59" = "#1B5331",
+  "Nitrososphaerales" = "#A2A475",
+  "PS1" = "#FAEFD1",
+  "Other" = "#046C9A"
+)
 ```
 
 The 25 KOs with the lowest (up in deeper samples) and 25 with the highest log fold-change are selected. Six of these KOs are represented in the gene list, the other 19 will be manually categorized. The number of 25 was arbitrary chosen. Many of these KOs are affiliated with the archaeon Nitrosopumilus that oxidizes ammonium and is capable of autotrophic growth using the hydroxypropionate/hydroxybutyrate cycle that is more energy efficient than other aerobic C fixation pathways, including the Calvin cycle (source: https://doi.org/10.1073/pnas.1402028111). The fact that C fixation KOs affiliated with this genus are abundantly detected strongly suggests autotrophic growth, possibly due to a low concentration of organic carbon.
 
 ```{r}
-top.de <- top.de %>%
+top.de <- de %>%
+  mutate(pathway = case_when(
+    #kegg_ko == "K02035" ~ "Extracellular solute-binding protein",
+    #kegg_ko == "K00412" ~ "Component of the ubiquinol-cytochrome c reductase",
+    kegg_ko == "K01638" ~ "Glycolate utilization (glcB)",
+    #kegg_ko == "K03646" ~ "Cell envelope biogenesis (TolA)",
+    kegg_ko == "K07112" ~ "Sulphur transport",
+    kegg_ko == "K02256" ~ "Cytochrome C and quinol oxidase",
+    kegg_ko == "K17227" ~ "Sulfur-oxidizing protein SoxZ",
+    kegg_ko == "K00394" ~ "Dissimilatory sulfate reduction (aprA)",
+    kegg_ko == "K17223" ~ "Sulfur-oxidizing protein SoxX",
+    kegg_ko == "K00387" ~ "Sulfite oxidation (SUOX)",
+    kegg_ko == "K03520" ~ "CO oxidation (coxL, cutL)",
+    kegg_ko == "K03520" ~ "CO oxidation (coxL, cutL)",
+    kegg_ko == "K03518" ~ "CO oxidation (coxS)",
+    kegg_ko == "K03519" ~ "CO oxidation (coxM, cutM)",
+    kegg_ko == "K00363" ~ "Dissimilatory nitrite reduction (nirD)",
+    kegg_ko == "K02044" ~ "Phosphonate, periplasmic substrate-binding protein",
+    kegg_ko == "K02027" ~ "Carbohydrate uptake (transported)",
+    kegg_ko == "K07463" ~ "Archaea-specific exonuclease",
+    kegg_ko == "K15016" ~ "Hydroxypropionate-hydroxybutylate cycle",
+    kegg_ko == "K21817" ~ "Synthesis of the retinal cofactor of bacteriorhodopsin",
+    kegg_ko == "K07725" ~ "CRISPR-associated protein"
+    #kegg_ko == "K06937" ~ "Membrane-spanning GDGT lipids",
+    #kegg_ko == "K03934" ~ "NADH dehydrogenase (ubiquinone) Fe-S protein"
+  )) %>% filter(!is.na(pathway))
+```
+
+
+```{r, include=FALSE}
+top.de <- de %>%
   mutate(pathway = case_when(
     kegg_ko == "K09152" ~ "Cell division",
     kegg_ko == "K21481" ~ "Antibiotic biosynthesis",
@@ -788,22 +813,25 @@ top.de <- top.de %>%
 
 
 
-```{r}
+```{r, fig.width=14/2.53}
 #| fig-cap: Differentially expressed orthologous genes (KOs) between 10 m depth and chlorophyll max (between 20 and 45 m depth). A positive fold change indicates the KO was detected in significant higher numbers at 10 m depth, while a negative value indicates higher numbers at chlorophyll max.
 #| label: fig-de
 
-de %>%
-  filter(kegg_ko %in% top.ko) %>% filter(genus %in% t) %>%
-  #mutate(kegg_ko = paste(kegg_ko, pathway, sep = ": ")) %>%
+top.de %>%
+  filter(!is.na(order)) %>%
+  mutate(order = if_else(
+    order %in% names(cols.order), true = order, false = "Other"
+  )) %>%
+  mutate(order = factor(order, levels = names(cols.order))) %>%
+  mutate(kegg_ko = paste(kegg_ko, pathway, sep = ": ")) %>%
   ggplot(aes(x = logfc, 
              y = kegg_ko, 
-             fill = genus
+             fill = order
              )
          ) +
   geom_col() + geom_vline(xintercept = 0, linewidth = unit(0.5, "mm"), color = "grey") +
-  guides(fill = guide_legend(ncol = 3)) +
   labs(x = expression("Log"["2"]*" fold change"), y = "", fill = "") +
-  scale_fill_manual(values = cols.genus) + theme_tidy(fontsize = 6, ratio = 2, legend = "bottom") +
+  scale_fill_manual(values = cols.order) + theme_tidy(fontsize = 6, ratio = 1.5, legend = "right") +
   theme(
     axis.ticks.y = element_blank(),
     legend.key.height = unit(3.5, "mm"),
@@ -833,27 +861,10 @@ n <- eggnog %>%
 ```{r}
 n %>%
   inner_join(meta, by = "sample") %>%
-  filter(phylum %in% names(cols.phylum)) %>%
-  ggplot(aes(x = tpm, y = pathway, fill = phylum, group = depth)) +
+  filter(order %in% names(cols.order)) %>%
+  ggplot(aes(x = tpm, y = pathway, fill = order, group = depth)) +
   geom_col(position = position_dodge(width = 0.95)) + 
-  scale_fill_manual(values = cols.phylum) +
-  labs(x = "Relative abundance (tpm)", y = "") +
-  theme(
-    legend.title = element_blank(),
-    axis.ticks.y = element_blank()
-  )
-```
-
-```{r}
-s <- eggnog %>% 
-  filter(kegg_ko != "-") %>%
-  inner_join(genelist %>% filter(metabolism == "Sulfur metabolism"), by = "kegg_ko") %>% select(kegg_ko, orf, pathway) %>%
-  inner_join(tax, by = "orf") %>% inner_join(tpm, by = "orf", relationship = "many-to-many")
-
-s %>%
-  filter(phylum %in% names(cols.phylum)) %>%
-  ggplot(aes(x = tpm, y = pathway, fill = phylum)) +
-  geom_col() + scale_fill_manual(values = cols.phylum) +
+  scale_fill_manual(values = cols.order) +
   labs(x = "Relative abundance (tpm)", y = "") +
   theme(
     legend.title = element_blank(),
@@ -915,5 +926,87 @@ ps %>%
     legend.title = element_blank(),
     axis.ticks.y = element_blank()
   )
+```
+
+# DNA sequencing: 16S amplicons
+
+```{r}
+seqtab <- read_tsv("data/amplicons/ASV_table.tsv", show_col_types = FALSE) %>%
+  pivot_longer(-1, names_to = "sample", values_to = "count") %>%
+  filter(count > 0) %>%
+  rename(seqid = ASV_ID) %>%
+  group_by(sample) %>% mutate(relab = count / sum(count)) %>% ungroup()
+  
+asv <- read_tsv("data/amplicons/ASV_tax_species.sbdi-gtdb.tsv", show_col_types = FALSE) %>%
+  rename(seqid = ASV_ID) %>% rename_with(tolower) %>% select(-species_exact, -confidence, -sequence)
+```
+
+
+```{r}
+t <- seqtab %>%
+  inner_join(asv, by = "seqid") %>%
+  group_by(phylum, sample) %>%
+  # Sum the abundance of each phylum within a sample
+  summarise(relab = sum(relab), .groups = 'drop_last') %>%
+  # Calculate the mean abundance of each phylum over the categories
+  summarise(mean.relab = sum(relab), .groups = 'drop') %>%
+  filter(!is.na(phylum)) %>%
+  top_n(9, mean.relab)
+
+cols.asvs <- c(
+  "Pseudomonadota" = "#C7B19C",
+  "Bacteroidota" = "#FAEFD1",
+  "Thermoproteota" = "#A2A475",
+  "Actinomycetota" = "#1B5331",
+  "Verrucomicrobiota" = "#D5D5D3",
+  "Thermoplasmatota" = "#972D15",
+  "Nitrospinota" = "#D8B70A",
+  "Marinisomatota" = "#00A08A",
+  "Cyanobacteriota" = "#D69C4E",
+  "Other" = "#046C9A"
+)
+```
+
+
+```{r prepare the asvs taxonomy - phylum}
+taxref <- asv %>%
+  left_join(t %>% transmute(phylum, topphylum = phylum), by = "phylum") %>%
+  replace_na(list("topphylum" = "Other"))
+```
+
+
+```{r, fig.width=12/2.53}
+#| out-width: 100%
+#| fig-cap: Community composition based on 16S ribosomal RNA gene amplicons. Showing the nine most abundant phyla while grouping the low-abundant phyla as "Other". The phyla in the legend are ordered according to overall abundance.
+#| label: fig-amplicons
+
+seqtab %>%
+  inner_join(taxref, by = "seqid") %>%
+  group_by(sample, topphylum) %>% summarise(relab = sum(relab) * 100, .groups = "drop") %>%
+  mutate(topphylum = factor(topphylum, levels = names(cols.asvs) %>% rev())) %>%
+  ggplot(aes(
+    x = sample,
+    y = relab,
+    fill = topphylum
+  )) + geom_col() +
+  labs(x = "", y = "Relative abundance (%)", fill = "Phylum") + theme_tidy(ratio = 0.7) +
+  scale_fill_manual(values = cols.asvs) +
+  theme(
+    axis.ticks.x = element_blank(),
+    axis.text.x = element_blank(),
+    legend.key.height = unit(3, "mm"),
+    legend.box.margin = margin(l = -8),
+    legend.text = element_text(margin = margin(l = 2, t = 2))
+  ) + guides(fill = guide_legend(reverse = TRUE)) +
+  annotate("segment", x =  0.55, xend =  4.45, y = -2, yend = -2) +
+  annotate("segment", x =  4.55, xend =  8.45, y = -2, yend = -2) +
+  annotate("segment", x =  8.55, xend = 12.45, y = -2, yend = -2) +
+  annotate("segment", x = 12.55, xend = 16.45, y = -2, yend = -2) +
+  annotate("segment", x = 16.55, xend = 20.45, y = -2, yend = -2) +
+  annotate("label", x = 2.5, y = -2, label = "Station 5", label.size = 0, size = 7/.pt) +
+  annotate("label", x = 6.5, y = -2, label = "26", label.size = 0, size = 7/.pt) +
+  annotate("label", x =10.5, y = -2, label = "42", label.size = 0, size = 7/.pt) +
+  annotate("label", x =14.5, y = -2, label = "53", label.size = 0, size = 7/.pt) +
+  annotate("label", x =18.5, y = -2, label = "56", label.size = 0, size = 7/.pt)
 ```
 

@@ -56,6 +56,13 @@ tax <- read_tsv("data/megahit.prokka.gtdb_taxonomy.tsv.gz", show_col_types = F)
 ```
 
 
+Check photosynthesis pathways using pathway id
+Check C fixation (Calvin cycle) Cyanobacteria
+Check thimidine uptake of Nitrosopumilus: it releases thimidine so check for transporters
+Find out which primers were used for the 16S amplicons and coordinate with Pauline
+Check with clade further oxidizes nitrite to nitrate
+Influence of ammonium oxidation on oxygen consumption
+
 ```{r read the meta-t files}
 tpm <- read_tsv("data/megahit.prokka.counts.tsv.gz", show_col_types = F) %>% 
   select(orf, sample, count, tpm) %>%
@@ -140,6 +147,50 @@ cols.station <- c(
 
 
 # Data exploration
+
+```{r rarefaction: subsample the data}
+# Perform the subsampling
+# The lowest number of reads in a sample is 4.1 million
+
+rare <- tpm %>%
+  select(-tpm) %>%
+  pivot_wider(names_from = "orf", values_from = "count", values_fill = 0) %>%
+  column_to_rownames("sample") %>%
+  vegan::rarecurve(sample = 4.1e6, step = 1e5, tidy = TRUE) %>%
+  tibble() %>%
+  rename_with(tolower)
+```
+
+
+```{r plot the rarefaction, fig.width=10/2.53}
+#| fig-cap: Rarefaction curves to determine sufficient sequencing depth of the RNA extract
+#| label: fig-rarefaction
+#| out-width: 100%
+
+rare %>%
+  rename(samplesize = sample, sample = site, n.orfs = species) %>%
+  inner_join(meta, by = "sample") %>%
+  ggplot(aes(
+    x = samplesize, 
+    y = n.orfs,
+    colour = depth
+    )) + 
+  geom_line() + scale_color_manual(
+    values = c("10m" = "#899DA4", "chlMax" = "#046C9A"),
+    labels = c("10m" = "10 m", "chlMax" = "Chl. max")
+    ) +
+  labs(x = "No. of sequence reads", y = "Rarefied No. of ORFs") +
+  #scale_x_continuous(labels = c("0", "50.000", "100.000", "150.000")) +
+  theme_tidy(ratio = 0.7, fontsize = 6) +
+  theme(
+    legend.title = element_blank(),
+    legend.position = "inside",
+    legend.position.inside = c(0.85, 0.15)
+  )
+```
+
+
+
 
 @fig-domain depicts the ratio between bacteria and archaea for both depth layers. Note how the abundance of archaea is slightly higher in most of the deeper samples (chlorophyll max depth). 
 
@@ -583,12 +634,26 @@ genelist <- read_tsv("data/genelist.txt", show_col_types = FALSE) %>%
 ```
 
 
-```{r, fig.width=10/2.53}
+
+```{r}
 #| fig-cap: The six carbon fixation pathways and the summed tpm from all of the samples (n = 10 for each depth layer). These pathways were categorized based on KOs with one KO per pathway as a marker gene.
 #| label: fig-cfix
 #| out-width: 100%
 
-eggnog %>%
+cols.order <- c( # Sorted on abundance
+  "Rhizobiales_B" = "#D69C4E",
+  "Streptomycetales" = "#972D15",
+  "Rhodobacterales" = "#D8B70A",
+  "PS1" = "#FAEFD1",
+  "Pseudomonadales" = "#C7B19C",
+  "Burkholderiales" = "#D5D5D3",
+  "SAR86" = "#1B5331",
+  "Nitrososphaerales" = "#A2A475",
+  "Cyanobacteria" = "#00A08A",
+  "Other" = "#046C9A"
+)
+
+p1 <- eggnog %>%
   separate_longer_delim(kegg_ko, delim = ",") %>%
   inner_join(genelist, by = "kegg_ko") %>%
   mutate(pathway = case_when(
@@ -609,31 +674,168 @@ eggnog %>%
     "K00198"  # anaerobic carbon-monoxide dehydrogenase catalytic subunit - EC:1.2.7.4 - Wood-Ljungdahl
   )) %>%
   inner_join(tax, by = "orf") %>% inner_join(tpm, by = "orf", relationship = "many-to-many") %>% inner_join(meta, by = "sample") %>%
-  group_by(pathway, domain, depth) %>% summarise(tpm = sum(tpm), .groups = "drop") %>%
-  mutate(depth = factor(depth, levels = c("chlMax", "10m"))) %>%
-  filter(domain %in% c("Bacteria", "Archaea")) %>%
+  group_by(pathway, order) %>% summarise(tpm = sum(tpm), .groups = "drop") %>%
+  mutate(order = if_else(order %in% names(cols.order),
+                         order, "Other")) %>%
+  mutate(order = factor(order, levels = names(cols.order))) %>%
   ggplot(aes(
     x = tpm,
     y = fct_reorder(pathway, tpm),
-    group = depth,
-    fill = depth
+    fill = fct_rev(order)
   )) +
-  geom_col(position = position_dodge(width = 0.95)) + labs(x = "Relative abundance (tpm)", y = "") +
-  guides(fill = guide_legend(reverse = TRUE)) +
-  scale_fill_manual(values = c("#046C9A", "#78B7C5"), 
-                    labels = c("10m" = "10 m", "chlMax" = "Chl. max")
-                    ) +
-  annotate("text", x = 3500, y = 3.75, label = "98.3 % Nitrosopumilus sp.", hjust = 0, size = 7 / .pt) + # Chl. max
-  annotate("text", x = 1000, y = 4.26, label = "97.8 % Nitrosopumilus sp.", hjust = 0, size = 7 / .pt) + # 10 m
+  geom_col(width = 0.85, show.legend = TRUE) + labs(x = "", y = "") + 
+  scale_fill_manual(values = cols.order, drop = FALSE) +
+  scale_x_continuous(labels = c("0","20.000","40.000","60.000")) +
+  annotate("text", x = 6000, y = 2, label = "98 % Nitrosopumilus sp.", hjust = 0, size = 6 / .pt) + # Chl. max
   theme_tidy(fontsize = 7, ratio = 0.8) +
   theme(
-    legend.position = "inside",
-    legend.position.inside = c(0.8, 0.2),
     axis.ticks.y = element_blank(),
-    legend.title = element_blank()
+    legend.title = element_blank(),
+    axis.title.x = element_blank()
   )
 ```
 
+
+```{r n.cycling}
+n <- eggnog %>% 
+  filter(kegg_ko != "-") %>%
+  left_join(genelist %>% filter(metabolism == "Nitrogen metabolism"), by = "kegg_ko") %>% select(kegg_ko, orf, pathway) %>%
+  mutate(pathway = case_when(
+  kegg_ko %in% c("K10944","K10945","K10946") ~ "Ammonia monooxygenase (AmoABC)",
+  kegg_ko == "K03320" ~ "Ammonium transporter (amt)",
+  kegg_ko %in% c("K02586","K02588","K02591") ~ "Nitrogen fixation (nifDHK)",
+  .default = pathway
+)) %>% filter(!is.na(pathway)) %>%
+  inner_join(tax, by = "orf") %>% inner_join(tpm, by = "orf", relationship = "many-to-many") 
+```
+
+
+```{r}
+p2 <- n %>%
+  inner_join(meta, by = "sample") %>%
+  mutate(order = if_else(order %in% names(cols.order),
+                         order, "Other")) %>%
+  mutate(order = factor(order, levels = names(cols.order))) %>%
+  ggplot(aes(
+    x = tpm, 
+    y = pathway,
+    fill = fct_rev(order)
+    )) +
+  geom_col(width = 0.85, show.legend = TRUE) + 
+  scale_fill_manual(values = cols.order, drop = FALSE) +
+  labs(x = "", y = "") +
+  scale_x_continuous(labels = c("0", "5000", "", "15.000", "", "25.000")) +
+  theme(
+    axis.ticks.y = element_blank(),
+    axis.title.x = element_blank()
+  )
+```
+
+
+The genes listed below are typically catalyze the rate limiting step of the pathway. Like all other analysis, filtering is done based on the KOs and grouping of the KOs is avoided.
+
+```{r}
+c <- eggnog %>%
+  filter(kegg_ko != "-") %>%
+  select(kegg_ko, orf) %>% mutate(pathway = case_when(
+    kegg_ko == "K01637" ~ "Glyoxylate cycle: ICL",
+    kegg_ko == "K13937" ~ "Pentose phosphate pathway: G6PD",
+    kegg_ko == "K00850" ~ "Glycolysis: PFK",
+    kegg_ko == "K01690" ~ "ED pathway: edd",
+    kegg_ko == "K00031" ~ "Citric acid cycle: icd",
+    kegg_ko == "K18981" ~ "Uronate pathway: udh",
+    kegg_ko == "K00948" ~ "PRPP biosynthesis: RPPK",
+    .default = NA
+  )) %>% filter(!is.na(pathway)) %>%
+  inner_join(tax, by = "orf") %>% inner_join(tpm, by = "orf", relationship = "many-to-many") %>%
+  mutate(order = if_else(phylum == "Cyanobacteria", true = "Cyanobacteria", false = order))
+
+
+p3 <- c %>%
+  inner_join(meta, by = "sample") %>%
+  mutate(order = if_else(order %in% names(cols.order),
+                         order, "Other")) %>%
+  mutate(order = factor(order, levels = names(cols.order))) %>%
+  ggplot(aes(
+    x = tpm, 
+    y = pathway, 
+    fill = fct_rev(order)
+    )) +
+  geom_col(width = 0.85, show.legend = TRUE) + 
+  scale_fill_manual(values = cols.order, drop = FALSE) +
+  labs(x = "Relative abundance (tpm)", y = "") +
+  theme(
+    legend.title = element_blank(),
+    axis.ticks.y = element_blank()
+  )
+```
+
+
+```{r}
+ps <- eggnog %>%
+  filter(kegg_ko != "-") %>%
+  select(kegg_ko, orf) %>% mutate(pathway = case_when(
+    kegg_ko == "K02712" ~ "Photosystem II (psbK)",
+    kegg_ko == "K02707" ~ "Photosystem II (psbE)",
+    kegg_ko == "K02697" ~ "Photosystem I (psaJ)",
+    kegg_ko == "K02274" ~ "Cytochrome c oxidase (coxA)",
+    kegg_ko == "K02256" ~ "Cytochrome c oxidase (Cox1)",
+    .default = NA
+  )) %>% filter(!is.na(pathway)) %>%
+  inner_join(tax, by = "orf") %>% inner_join(tpm, by = "orf", relationship = "many-to-many") %>%
+  mutate(order = if_else(phylum == "Cyanobacteria", true = "Cyanobacteria", false = order))
+
+p4 <- ps %>% 
+  inner_join(meta, by = "sample") %>%
+  group_by(order, pathway, depth) %>% summarise(tpm = sum(tpm), .groups = "drop") %>%
+  mutate(order = if_else(order %in% names(cols.order),
+                         order, "Other")) %>%
+  mutate(order = factor(order, levels = names(cols.order))) %>%
+  ggplot(aes(
+    x = tpm, 
+    y = pathway,
+    fill = fct_rev(order)
+    )) +
+  geom_col(width = 0.85, show.legend = TRUE) + 
+  scale_fill_manual(values = cols.order, drop = FALSE) +
+  labs(x = "Relative abundance (tpm)", y = "") + scale_x_continuous(labels = c("0", "50.000", "100.000"), breaks = c(0, 50000, 100000)) +
+  theme(
+    legend.title = element_blank(),
+    axis.ticks.y = element_blank()
+  )
+```
+
+
+@fig-elements shows the tpm for each representative KO summed over all the samples (n = 20). N transformation, central C metabolism, and photosynthesis plus aerobic respiration. Udh uronate dehydrogenase, edd phosphogluconate dehydratase, icd isocitrate dehydrogenase, ICL isocitrate lyase, G6PD glucose-6-phosphate 1-dehydrogenase, PRPP phosphoribosyl pyrophosphate, RPPK ribose-phosphate pyrophosphokinase, ED: Entner–Doudoroff.
+
+
+```{r}
+#| label: fig-elements
+#| fig-cap: KO plot
+
+(p1 + p2) / (p3 + p4) + plot_annotation(tag_levels = c("a", "b", "c", "d")) + plot_layout(guides = "collect") & 
+  theme_bw(base_size = 6) & theme(
+  axis.text = element_text(size = 6, colour = "#000000"),
+  axis.title.x = element_text(size = 6, colour = "#000000"),
+  legend.text = element_text(size = 6, colour = "#000000", margin = margin(l = 2)),
+  legend.title = element_blank(),
+  legend.key.height = unit(3.5, "mm"),
+  plot.margin = margin(),
+  plot.tag.location = "panel",
+  plot.tag.position = c(0.95, 0.95),
+  plot.tag = element_text(size = 7, face = "bold"),
+  axis.ticks.y = element_blank(),
+  axis.ticks.length.x = unit(0.5, "mm"),
+  panel.grid = element_blank(),
+  panel.border = element_rect(fill = "transparent", linewidth = 0.75),
+  legend.position = "bottom",
+  aspect.ratio = 0.8
+)
+```
+
+```{r}
+ggsave(filename = "composite.pdf", width = 14, height = 14, units = "cm")
+```
 
 ¨
 
@@ -736,9 +938,9 @@ top.de <- de %>%
     #kegg_ko == "K03646" ~ "Cell envelope biogenesis (TolA)",
     kegg_ko == "K07112" ~ "Sulphur transport",
     kegg_ko == "K02256" ~ "Cytochrome C and quinol oxidase",
-    kegg_ko == "K17227" ~ "Sulfur-oxidizing protein SoxZ",
+    kegg_ko == "K17227" ~ "Sulfur oxidation SoxZ",
     kegg_ko == "K00394" ~ "Dissimilatory sulfate reduction (aprA)",
-    kegg_ko == "K17223" ~ "Sulfur-oxidizing protein SoxX",
+    kegg_ko == "K17223" ~ "Sulfur oxidation SoxX",
     kegg_ko == "K00387" ~ "Sulfite oxidation (SUOX)",
     kegg_ko == "K03520" ~ "CO oxidation (coxL, cutL)",
     kegg_ko == "K03520" ~ "CO oxidation (coxL, cutL)",
@@ -757,63 +959,8 @@ top.de <- de %>%
 ```
 
 
-```{r, include=FALSE}
-top.de <- de %>%
-  mutate(pathway = case_when(
-    kegg_ko == "K09152" ~ "Cell division",
-    kegg_ko == "K21481" ~ "Antibiotic biosynthesis",
-    kegg_ko == "K07725" ~ "CRISPR-associated protein",
-    kegg_ko == "K07143" ~ "Autoantigen",
-    kegg_ko == "K07569" ~ "Ribosome biogenesis",
-    kegg_ko == "K07463" ~ "Archaea-specific exonuclease",
-    kegg_ko == "K14728" ~ "Luciferase-like monooxygenase",
-    kegg_ko == "K05831" ~ "AA biosynthesis",
-    kegg_ko == "K06191" ~ "Glutaredoxin-like protein",
-    kegg_ko == "K07640" ~ "Signal transduction",
-    kegg_ko == "K03839" ~ "Flavodoxin",
-    kegg_ko == "K07458" ~ "DNA mismatch endonuclease",
-    kegg_ko == "K18594" ~ "3-hydroxypropionyl-CoA synthetase",
-    kegg_ko == "K06937" ~ "Membrane-spanning GDGT lipids",
-    kegg_ko == "K05827" ~ "AA biosynthesis",
-    kegg_ko == "K18604" ~ "Acetyl-CoA/propionyl-CoA carboxylase",
-    kegg_ko == "K02044" ~ "Phosphonate, periplasmic substrate-binding protein",
-    kegg_ko == "K09771" ~ "Signaling and cellular processes",
-    kegg_ko == "K07464" ~ "CRISPR-associated exonuclease",
-    kegg_ko == "K17325" ~ "Glycerol transporter",
-    kegg_ko == "K03477" ~ "DeoR family transcriptional regulator",
-    kegg_ko == "K21817" ~ "Synthesis of the retinal cofactor of bacteriorhodopsin",
-    kegg_ko == "K01473" ~ "Hydantoinase oxoprolinase",
-    kegg_ko == "K06963" ~ "tRNA acetyltransferase",
-    kegg_ko == "K01820" ~ "Fructose and mannose metabolism",
-    kegg_ko == "K15513" ~ "Benzoate degradation",
-    kegg_ko == "K17324" ~ "Glycerol transporter",
-    kegg_ko == "K09539" ~ "Heat shock protein",
-    kegg_ko == "K05663" ~ "ABC transporter",
-    kegg_ko == "K21309" ~ "Sulfite oxidation",
-    kegg_ko == "K05820" ~ "3-phenylpropionic acid transporter",
-    kegg_ko == "K02494" ~ "Outer membrane lipoprotein",
-    kegg_ko == "K17214" ~ "Inositol transporter",
-    kegg_ko == "K07639" ~ "Signal transduction, OmpR family",
-    kegg_ko == "K02027" ~ "Carbohydrate uptake (transported)",
-    kegg_ko == "K14153" ~ "Thiamine metabolism",
-    kegg_ko == "K16877" ~ "Furfural degradation",
-    kegg_ko == "K17871" ~ "Pyridine nucleotide-disulphide oxidoreductase",
-    kegg_ko == "K18622" ~ "Actin binding protein",
-    kegg_ko == "K14779" ~ "DEAD box helicase family",
-    # In the gene list
-    kegg_ko == "K15016" ~ "Hydroxypropionate-hydroxybutylate cycle",
-    kegg_ko == "K08689" ~ "Biphenyl degradation",
-    kegg_ko == "K16306" ~ "Glycolysis (Embden-Meyerhof pathway)",
-    kegg_ko == "K02189" ~ "Cobalamin biosynthesis",
-    kegg_ko == "K03934" ~ "NADH dehydrogenase (ubiquinone) Fe-S protein"
-  ))
 
-```
-
-
-
-
-```{r, fig.width=14/2.53}
+```{r}
 #| fig-cap: Differentially expressed orthologous genes (KOs) between 10 m depth and chlorophyll max (between 20 and 45 m depth). A positive fold change indicates the KO was detected in significant higher numbers at 10 m depth, while a negative value indicates higher numbers at chlorophyll max.
 #| label: fig-de
 
@@ -840,93 +987,6 @@ top.de %>%
   )
 ```
 
-
-# C, N, P, and S cycling
-
-```{r n.cycling}
-n <- eggnog %>% 
-  #separate_longer_delim(kegg_ko, delim = ",") %>% # This is equivalent to using grepl() for selecting the KOs
-  filter(kegg_ko != "-") %>%
-  left_join(genelist %>% filter(metabolism == "Nitrogen metabolism"), by = "kegg_ko") %>% select(kegg_ko, orf, pathway) %>%
-  mutate(pathway = case_when(
-  kegg_ko %in% c("K10944","K10945","K10946") ~ "Ammonia monooxygenase (AmoABC)",
-  kegg_ko == "K03320" ~ "Ammonium transporter (amt)",
-  kegg_ko %in% c("K02586","K02588","K02591") ~ "Nitrogen fixation (nifDHK)",
-  .default = pathway
-)) %>% filter(!is.na(pathway)) %>%
-  inner_join(tax, by = "orf") %>% inner_join(tpm, by = "orf", relationship = "many-to-many") 
-```
-
-
-```{r}
-n %>%
-  inner_join(meta, by = "sample") %>%
-  filter(order %in% names(cols.order)) %>%
-  ggplot(aes(x = tpm, y = pathway, fill = order, group = depth)) +
-  geom_col(position = position_dodge(width = 0.95)) + 
-  scale_fill_manual(values = cols.order) +
-  labs(x = "Relative abundance (tpm)", y = "") +
-  theme(
-    legend.title = element_blank(),
-    axis.ticks.y = element_blank()
-  )
-```
-
-
-The genes listed below are typically catalyze the rate limiting step of the pathway. Like all other analysis, filtering is done based on the KOs and grouping of the KOs is avoided.
-
-```{r}
-c <- eggnog %>%
-  filter(kegg_ko != "-") %>%
-  select(kegg_ko, orf) %>% mutate(pathway = case_when(
-    kegg_ko == "K01637" ~ "Glyoxylate cycle: isocitrate lyase",
-    kegg_ko == "K13937" ~ "Pentose phosphate pathway: G6P dehydrogenase",
-    kegg_ko == "K00850" ~ "Glycolysis: PFK",
-    kegg_ko == "K01690" ~ "Entner-Doudoroff pathway: phosphogluconate dehydratase",
-    kegg_ko == "K00031" ~ "Citric acid cycle: isocitrate dehydrogenase",
-    kegg_ko == "K18981" ~ "Uronate pathway: uronate dehydrogenase",
-    kegg_ko == "K00948" ~ "PRPP biosynthesis: ribose-phosphate pyrophosphokinase",
-    .default = NA
-  )) %>% filter(!is.na(pathway)) %>%
-  inner_join(tax, by = "orf") %>% inner_join(tpm, by = "orf", relationship = "many-to-many")
-
-c %>%
-  inner_join(meta, by = "sample") %>%
-  filter(phylum %in% names(cols.phylum)) %>%
-  ggplot(aes(x = tpm, y = pathway, fill = phylum, group = depth)) +
-  geom_col(position = position_dodge(width = 0.95)) + scale_fill_manual(values = cols.phylum) +
-  labs(x = "Relative abundance (tpm)", y = "") +
-  theme(
-    legend.title = element_blank(),
-    axis.ticks.y = element_blank()
-  )
-```
-
-```{r}
-ps <- eggnog %>%
-  filter(kegg_ko != "-") %>%
-  select(kegg_ko, orf) %>% mutate(pathway = case_when(
-    kegg_ko == "K02703" ~ "Photosystem II psbA",
-    kegg_ko == "K02712" ~ "Photosystem II psbK",
-    kegg_ko == "K02707" ~ "Photosystem II psbE",
-    kegg_ko == "K02697" ~ "Photosystem I psaJ",
-    kegg_ko == "K02274" ~ "Cytochrome c oxidase subunit I",
-    kegg_ko == "K02256" ~ "Cytochrome c oxidase subunit 1",
-    .default = NA
-  )) %>% filter(!is.na(pathway)) %>%
-  inner_join(tax, by = "orf") %>% inner_join(tpm, by = "orf", relationship = "many-to-many")   
-
-ps %>% 
-  inner_join(meta, by = "sample") %>%
-  filter(phylum %in% names(cols.phylum)) %>%
-  ggplot(aes(x = tpm, y = pathway, fill = phylum, group = depth)) +
-  geom_col(position = position_dodge(width = 0.95)) + scale_fill_manual(values = cols.phylum) +
-  labs(x = "Relative abundance (tpm)", y = "") +
-  theme(
-    legend.title = element_blank(),
-    axis.ticks.y = element_blank()
-  )
-```
 
 # DNA sequencing: 16S amplicons
 
@@ -975,8 +1035,7 @@ taxref <- asv %>%
 ```
 
 
-```{r, fig.width=12/2.53}
-#| out-width: 100%
+```{r}
 #| fig-cap: Community composition based on 16S ribosomal RNA gene amplicons. Showing the nine most abundant phyla while grouping the low-abundant phyla as "Other". The phyla in the legend are ordered according to overall abundance.
 #| label: fig-amplicons
 
@@ -997,7 +1056,7 @@ seqtab %>%
     legend.key.height = unit(3, "mm"),
     legend.box.margin = margin(l = -8),
     legend.text = element_text(margin = margin(l = 2, t = 2))
-  ) + guides(fill = guide_legend(reverse = TRUE)) +
+  ) + guides(fill = guide_legend(reverse = FALSE)) +
   annotate("segment", x =  0.55, xend =  4.45, y = -2, yend = -2) +
   annotate("segment", x =  4.55, xend =  8.45, y = -2, yend = -2) +
   annotate("segment", x =  8.55, xend = 12.45, y = -2, yend = -2) +

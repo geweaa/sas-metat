@@ -1106,7 +1106,7 @@ top.de %>%
 
 # DNA sequencing: 16S amplicons
 
-Forward primer 515F (5' GTGYCAGCMGCCGCGGTAA), reverse primer 926R (5' CCGYCAATTYMTTTRAGTTT) from Parada et al. (2015) [-@parada2016]
+Forward primer 515F (5' GTGYCAGCMGCCGCGGTAA), reverse primer 926R (5' CCGYCAATTYMTTTRAGTTT) from Parada et al. (2015) [-@parada2016]. The data was submitted to ENA under the reference PRJEB63557.
 
 ```{r}
 read_delim("data/amplicons/params.yaml", delim = " ", col_names = c("parameter", "value"), show_col_types = FALSE) %>%
@@ -1123,6 +1123,10 @@ seqtab <- read_tsv("data/amplicons/ASV_table.tsv", show_col_types = FALSE) %>%
   
 asv <- read_tsv("data/amplicons/ASV_tax_species.sbdi-gtdb.tsv", show_col_types = FALSE) %>%
   rename(seqid = ASV_ID) %>% rename_with(tolower) %>% select(-species_exact, -confidence, -sequence)
+
+dnakey <- read_tsv("data/amplicons/sample-key.txt", show_col_types = FALSE) %>%
+  mutate(station = factor(station, levels = c("5","26","42","53","56"))) %>%
+  mutate(layer = factor(layer, levels = c("10m","Chlmax")))
 ```
 
 
@@ -1206,7 +1210,8 @@ nmds <- seqtab %>%
 
 nmds.scores <- vegan::scores(nmds)$sites %>% 
   data.frame() %>%
-  rownames_to_column("sample")
+  rownames_to_column("sample") %>%
+  inner_join(dnakey, by = "sample")
 ```
 
 
@@ -1215,21 +1220,16 @@ nmds.scores <- vegan::scores(nmds)$sites %>%
 #| label: fig-nmds.amplicons
 
 nmds.scores %>%
-  mutate(station = case_when(
-    sample %in% c("P28609_1037_S37","P28609_1038_S38","P28609_1039_S39","P28609_1040_S40") ~ "5",
-    sample %in% c("P28609_1041_S41","P28609_1042_S42","P28609_1043_S43","P28609_1044_S44") ~ "26",
-    sample %in% c("P28609_1045_S45","P28609_1046_S46","P28609_1047_S47","P28609_1048_S48") ~ "42",
-    sample %in% c("P28609_1049_S49","P28609_1050_S50","P28609_1051_S51","P28609_1052_S52") ~ "53",
-    .default = "56"
-  )) %>%
   ggplot(aes(
     x = NMDS1,
     y = NMDS2,
-    color = station
+    color = station,
+    shape = depth
   )) +
   geom_vline(xintercept = 0, linetype = 'dotted') +
   geom_hline(yintercept = 0, linetype = 'dotted') +
   geom_point() + theme_tidy() + scale_color_manual(values = cols.station, name = "Station") +
+  scale_shape_discrete(labels = c("10 m", "Chl. max"), name = "") +
   annotate('text', x = -Inf, y = -Inf, size = 7/.pt, 
            label = paste('Stress = ', round(nmds$stress, digits = 2)),
            hjust = -0.1, vjust = -1,

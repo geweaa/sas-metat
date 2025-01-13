@@ -137,6 +137,11 @@ cols.genus <- c( # Sorted on abundance
   "AAA536-G10" = "#D5D5D3"
 )
 
+cols.depth <- c(
+  "10m" = "#78B7C5",
+  "chlMax" = "#046C9A"
+)
+
 cols.station <- c(
    "5" = "#046C9A",
   "26" = "#446455",
@@ -148,6 +153,8 @@ cols.station <- c(
 
 
 # Data exploration
+
+## Rarefaction
 
 ```{r rarefaction: subsample the data}
 # Perform the subsampling
@@ -182,13 +189,15 @@ rare %>%
     ) +
   labs(x = "No. of sequence reads", y = "Rarefied No. of ORFs") +
   #scale_x_continuous(labels = c("0", "50.000", "100.000", "150.000")) +
-  theme_tidy(ratio = 0.7, fontsize = 6) +
+  theme_tidy(fontsize = 6) +
   theme(
     legend.title = element_blank(),
     legend.position = "inside",
     legend.position.inside = c(0.85, 0.15)
   )
 ```
+
+## Percentage of annotated transcripts
 
 ```{r}
 taxref <- tpm %>% left_join(tax, by = "orf")
@@ -226,7 +235,7 @@ i %>%
 ```
 
 
-
+## Community composition on domain level
 
 @fig-domain depicts the ratio between bacteria and archaea for both depth layers. Note how the abundance of archaea is slightly higher in most of the deeper samples (chlorophyll max depth). 
 
@@ -250,12 +259,13 @@ tpm %>%
     y = tpm,
     fill = domain
   )) +
-  geom_col() + theme_tidy(ratio = 0.7) +
+  geom_col() + theme_tidy() +
   scale_y_continuous(breaks = c(0, 2e5, 4e5), labels = c(0, 2, 4)) +
   labs(y = expression('Relative abundance (tpm '%*% '10'^'5'*')')) + 
   scale_fill_manual(values = c("Bacteria" = "#C7B19C", "Archaea" = "#A2A475")) +
   guides(fill = guide_legend(reverse = TRUE)) +
   theme(
+    aspect.ratio = 0.7,
     legend.title = element_blank(),
     axis.title.x = element_blank(),
     axis.ticks.x = element_blank(),
@@ -321,8 +331,9 @@ tpm %>%
                 labels = c("0.0", "0.2", "0.4", "0.6", "0.8", "1.0")
                 ) +
   scale_fill_manual(values = cols.phylum) +
-  theme_tidy(ratio = 0.5) + 
+  theme_tidy() + 
   theme(
+    aspect.ratio = 0.5,
     axis.ticks.x = element_blank(),
     legend.key.height = unit(3.5, "mm"),
     legend.margin = margin(),
@@ -396,8 +407,9 @@ tpm %>%
                 labels = c("0.0", "0.2", "0.4", "0.6", "0.8", "1.0")
                 ) +
   scale_fill_manual(values = cols.order) +
-  theme_tidy(ratio = 0.5) + 
+  theme_tidy() + 
   theme(
+    aspect.ratio = 0.5,
     axis.ticks.x = element_blank(),
     legend.key.height = unit(3.5, "mm"),
     legend.margin = margin(),
@@ -483,6 +495,7 @@ p.genus <- tpm %>%
   scale_fill_manual(values = cols.genus) +
   theme_tidy(legend = "bottom") + guides(fill = guide_legend(reverse = TRUE, nrow = 4)) +
   theme(
+    aspect.ratio = 0.7,
     axis.ticks.x = element_blank(),
     legend.key.height = unit(3.5, "mm"), legend.key.width = unit(3, "mm"),
     legend.margin = margin(),
@@ -490,16 +503,21 @@ p.genus <- tpm %>%
     legend.title = element_blank(),
     legend.text = element_text(margin = margin(l = 2))
     ) +
-  annotate("segment", x =  0.55, xend =  4.45, y = -10000, yend = -10000) +
-  annotate("segment", x =  4.55, xend =  8.45, y = -10000, yend = -10000) +
-  annotate("segment", x =  8.55, xend = 12.45, y = -10000, yend = -10000) +
-  annotate("segment", x = 12.55, xend = 16.45, y = -10000, yend = -10000) +
-  annotate("segment", x = 16.55, xend = 20.45, y = -10000, yend = -10000) +
-  annotate("label", x = 2.5, y = -10000, label = "Station 5", label.size = 0, size = 7/.pt) +
-  annotate("label", x = 6.5, y = -10000, label = "26", label.size = 0, size = 7/.pt) +
-  annotate("label", x =10.5, y = -10000, label = "42", label.size = 0, size = 7/.pt) +
-  annotate("label", x =14.5, y = -10000, label = "53", label.size = 0, size = 7/.pt) +
-  annotate("label", x =18.5, y = -10000, label = "56", label.size = 0, size = 7/.pt)
+  annotate("segment", x =  0.55, xend =  2.45, y = -10000, yend = -10000, color = "#78B7C5") +
+  annotate("segment", x =  2.55, xend =  4.45, y = -10000, yend = -10000, color = "#046C9A") +
+  annotate("segment", x =  4.55, xend =  6.45, y = -10000, yend = -10000, color = "#78B7C5") +
+  annotate("segment", x =  6.55, xend =  8.45, y = -10000, yend = -10000, color = "#046C9A") +
+  annotate("segment", x =  8.55, xend = 10.45, y = -10000, yend = -10000, color = "#78B7C5") +
+  annotate("segment", x = 10.55, xend = 12.45, y = -10000, yend = -10000, color = "#046C9A") +
+  annotate("segment", x = 12.55, xend = 14.45, y = -10000, yend = -10000, color = "#78B7C5") +
+  annotate("segment", x = 14.55, xend = 16.45, y = -10000, yend = -10000, color = "#046C9A") +
+  annotate("segment", x = 16.55, xend = 18.45, y = -10000, yend = -10000, color = "#78B7C5") +
+  annotate("segment", x = 18.55, xend = 20.45, y = -10000, yend = -10000, color = "#046C9A") +
+  annotate("label", x = 2.5, y = -10000, label = "5", label.size = 0, size = 6/.pt) +
+  annotate("label", x = 6.5, y = -10000, label = "26", label.size = 0, size = 6/.pt) +
+  annotate("label", x =10.5, y = -10000, label = "42", label.size = 0, size = 6/.pt) +
+  annotate("label", x =14.5, y = -10000, label = "53", label.size = 0, size = 6/.pt) +
+  annotate("label", x =18.5, y = -10000, label = "56", label.size = 0, size = 6/.pt)
 
 p.genus
 ```
@@ -656,26 +674,26 @@ p.nmds <- nmds.scores %>%
   # Plot
   ggplot(aes(x = NMDS1, 
              y = NMDS2, 
-             colour = station,
-             shape = depth
+             fill = depth, color = depth
              )) +
   geom_vline(xintercept = 0, linetype = 'dotted', linewidth = 0.25) +
   geom_hline(yintercept = 0, linetype = 'dotted', linewidth = 0.25) +
   # Points for samples, coloured by site
-  geom_point(size = 3) +
-  scale_shape_discrete(labels = c("10 m", "Chl. max"), name = "") +
-  scale_color_manual(values = cols.station, name = "Station") +
+  geom_point(size = 5, shape = 21, stroke = 0.5) +
+  geom_text(aes(label = station), size = 7/.pt, color = "black") +
   theme_tidy() +
-  stat_ellipse(aes(x = NMDS1, y = NMDS2, colour = depth), 
+  stat_ellipse(aes(x = NMDS1, y = NMDS2), 
                geom = "polygon", show.legend = F, level = 0.90,
-               fill = NA, linetype = "dashed", color = "black", linewidth = 0.2) +
+               fill = NA, linetype = "dashed", linewidth = 0.4) +
+  scale_color_manual(values = cols.depth, labels = c("10 m", "Chl. max")) +  
+  scale_fill_manual(values = alpha(cols.depth, alpha = 0.3), guide = "none") +    
   annotate('text', x = -Inf, y = -Inf, size = 7/.pt,
            label = paste('Stress = ', round(nmds$stress, digits = 2)),
            hjust = -0.1, vjust = -0.5) +
   theme(
     axis.title.y = element_text(margin = margin()),
     panel.border = element_rect(linewidth = 0.75, colour = "black", fill = NA),
-    legend.text = element_text(margin = margin(l = 0)),
+    legend.text = element_text(margin = margin(l = 0)), legend.title = element_blank(),
     legend.box.margin = margin(l = -8),
     legend.position = "bottom",
     aspect.ratio = 1
@@ -689,7 +707,11 @@ p.nmds
 ```{r}
 #| label: fig-nmdstax
 
-p.nmds + p.genus
+p.nmds + p.genus + plot_annotation(tag_levels = c("a", "b")) & theme(
+  plot.margin = margin(r = 2),
+  plot.tag.location = "panel",
+  plot.tag.position = c(0.97, 0.97),
+  )
 ```
 
 
@@ -725,8 +747,8 @@ eggnog %>% inner_join(cogs, by = "cog_category") %>%
                     labels = c("10m" = "10 m", "chlMax" = "Chl. max")
                     ) +
   theme_tidy(fontsize = 6) + scale_x_continuous(breaks = c(0, 5e5, 1e6), labels = c(
-    "0", expression("5" %*% "10"^5), expression("1" %*% "10"^6)
-    )) + xlab("Relative abundance (tpm)") + guides(fill = guide_legend(reverse = TRUE)) +
+    "0", expression("5" %*% "10"^5), expression("10"^6)
+    )) + xlab("Relative abundance (tpm)") +
   theme(
     axis.title.y = element_blank(),
     axis.ticks.y = element_blank(),
@@ -1094,8 +1116,9 @@ top.de %>%
          ) +
   geom_col() + geom_vline(xintercept = 0, linewidth = unit(0.5, "mm"), color = "grey") +
   labs(x = expression("Log"["2"]*" fold change"), y = "", fill = "") +
-  scale_fill_manual(values = cols.order) + theme_tidy(fontsize = 6, ratio = 1.5, legend = "right") +
+  scale_fill_manual(values = cols.order) + theme_tidy(fontsize = 6, legend = "right") +
   theme(
+    aspect.ratio = 1.5,
     axis.ticks.y = element_blank(),
     legend.key.height = unit(3.5, "mm"),
     legend.key.spacing.y = unit(0, "mm"),
@@ -1117,7 +1140,7 @@ read_delim("data/amplicons/params.yaml", delim = " ", col_names = c("parameter",
 ```{r}
 seqtab <- read_tsv("data/amplicons/ASV_table.tsv", show_col_types = FALSE) %>%
   pivot_longer(-1, names_to = "sample", values_to = "count") %>%
-  filter(count > 0) %>%
+  filter(count > 0) %>% mutate(sample = gsub("_S..", "", sample)) %>%
   rename(seqid = ASV_ID) %>%
   group_by(sample) %>% mutate(relab = count / sum(count)) %>% ungroup()
   
@@ -1224,7 +1247,7 @@ nmds.scores %>%
     x = NMDS1,
     y = NMDS2,
     color = station,
-    shape = depth
+    shape = layer
   )) +
   geom_vline(xintercept = 0, linetype = 'dotted') +
   geom_hline(yintercept = 0, linetype = 'dotted') +
@@ -1239,3 +1262,270 @@ nmds.scores %>%
   )
 ```
 
+
+
+# Hydrochemistry
+
+```{r}
+tmp <- readxl::read_excel("data/amplicons/hydrochemistry.xlsx", sheet = 1)
+```
+
+
+```{r}
+p1 <- tmp %>%
+  ggplot(aes(
+    x = sal,
+    y = depth
+  )) +
+  geom_smooth(orientation = "y", se = FALSE, method = "gam", color = "black", linewidth = 0.75) +
+  geom_errorbar(aes(
+    xmin = sal - sal.se, 
+    xmax = sal + sal.se), linewidth = 0.3, color = "black", width = 12) +
+  theme_tidy() + scale_y_reverse() + labs(x = expression("Salinity (g kg"^"-1"*")"), y = "Depth (m)") +
+  theme(
+    aspect.ratio = 1.5
+  )
+
+p1
+```
+```{r}
+p2 <- tmp %>%
+  ggplot(aes(
+    x = temp,
+    y = depth
+  )) +
+  geom_smooth(orientation = "y", se = FALSE, color = "black", linewidth = 0.75) +
+  geom_errorbar(aes(
+    xmin = temp - temp.se, 
+    xmax = temp + temp.se), linewidth = 0.3, color = "black", width = 12) +
+  theme_tidy() + scale_y_reverse() + labs(x = expression("Temperature (\u00B0C)")) +
+  theme(
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    aspect.ratio = 1.5
+  )
+
+p2
+```
+```{r}
+p3 <- tmp %>% na.omit() %>%
+  ggplot(aes(
+    x = chla,
+    y = depth
+  )) +
+  geom_smooth(orientation = "y", se = FALSE, color = "black", linewidth = 0.75, span = 0.6) +
+  geom_errorbar(aes(
+    xmin = chla - chla.se, 
+    xmax = chla + chla.se), linewidth = 0.3, color = "black", width = 12)   +
+  theme_tidy() + scale_y_reverse() + labs(x = expression("Chlorophyll a (µg dm"^"-3"*")")) +
+  theme(
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    aspect.ratio = 1.5
+  )
+
+p3
+```
+
+```{r}
+tmp <- readxl::read_excel("data/amplicons/hydrochemistry.xlsx", sheet = 2)
+```
+
+```{r}
+p4 <- tmp %>% 
+  mutate(station = as.character(station)) %>%
+  ggplot(aes(
+    x = abu,
+    y = depth,
+    color = station, fill = station
+  )) +
+  #geom_smooth(orientation = "y", fill = "#BDBDBD", color = "#BDBDBD", linewidth = 0, linetype = 0) + 
+  geom_point(size = 3, shape = 21, stroke = 0.7) +
+  geom_linerange(aes(xmin = abu-abu.se, xmax = abu+abu.se)) +
+  scale_y_reverse() +
+  scale_fill_manual(values = alpha(cols.station, alpha = 0.3), guide = "none") + scale_color_manual(values = cols.station, guide = "none") +
+  theme_tidy() + labs(x = expression("Cell number ("%*%"10"^"8"*" dm"^"-3"*")"), y = "Depth (m)") +
+  theme(
+    aspect.ratio = 1.5,
+    axis.text.y = element_blank(),
+    axis.title.y = element_blank()
+  )
+
+p4
+```
+
+```{r}
+p5 <- tmp %>% 
+  mutate(station = as.character(station)) %>%
+  ggplot(aes(
+    x = growth,
+    y = depth,
+    color = station, fill = station
+  )) +
+  #geom_smooth(method = "gam", fill = "#BDBDBD", color = "#BDBDBD", linewidth = 0, orientation = "y", linetype = 0) + 
+  geom_point(size = 3, shape = 21, stroke = 0.5) +
+  geom_linerange(aes(xmin = growth-growth.se, xmax = growth+growth.se)) +
+  scale_y_reverse() +
+  scale_fill_manual(values = alpha(cols.station, alpha = 0.3), guide = "none") + 
+  scale_color_manual(values = cols.station, guide = "none") +
+  labs(x = expression("Growth ("%*%"10"^"7"*" dm"^"-3"*" d"^"-1"*")"), y = "Depth (m)") +
+  theme_tidy() +
+  theme(
+    aspect.ratio = 1.5
+  )
+
+p5
+```
+```{r}
+tmp <- readxl::read_excel("data/amplicons/hydrochemistry.xlsx", sheet = 3)
+
+p6 <- tmp %>% na.omit() %>%
+  mutate(station = as.character(station)) %>%
+  ggplot(aes(
+    x = resp,
+    y = depth,
+    color = station, fill = station
+  )) +
+  geom_point(size = 3, shape = 21, stroke = 0.7) + 
+  geom_linerange(aes(xmin = resp-resp.se, xmax = resp+resp.se)) +
+  #geom_smooth(method = "lm", orientation = "y", fill = "#BDBDBD", color = "#BDBDBD", linewidth = 0, linetype = 0) + scale_y_reverse() +
+  scale_fill_manual(values = alpha(cols.station, alpha = 0.3), guide = "none") + 
+  scale_color_manual(values = cols.station, guide = "none") +
+  labs(x = expression("Respiration (µmol O"[2]*" dm"^"-3"*" d"^"-1"*")"), y = "Depth (m)") +
+  theme_tidy() +
+  theme(
+    aspect.ratio = 1.5,
+    axis.text.y = element_blank(),
+    axis.title.y = element_blank(),
+  )
+
+p6
+```
+```{r}
+tmp <- readxl::read_excel("data/amplicons/hydrochemistry.xlsx", sheet = 4)
+
+p7 <- tmp %>% na.omit() %>%
+  mutate(station = factor(station, levels = c("5", "26", "42", "53", "56"))) %>%
+  ggplot(aes(
+    x = cellvol,
+    y = depth,
+    color = station, fill = station
+  )) +
+  geom_point(size = 3, shape = 21, stroke = 0.7) + 
+  #geom_smooth(method = "lm", fill = "#BDBDBD", color = "#BDBDBD", linewidth = 0, linetype = 0) + scale_y_reverse() +
+  scale_fill_manual(values = alpha(cols.station, alpha = 0.3), name = "Station") + scale_color_manual(values = cols.station, name = "Station") +
+  labs(x = expression("Cell volume (µm"^"3"*")"), y = "Depth (m)") +
+  theme_tidy() +
+  theme(
+    aspect.ratio = 1.5,
+    axis.text.y = element_blank(),
+    axis.title.y = element_blank(),
+  )
+
+p7
+```
+
+```{r}
+library(patchwork)
+```
+
+```{r}
+p1 + p2 + p3 + p4 + p5 + p6 + p7 + plot_layout(nrow = 2, guides = "collect") + plot_annotation(tag_levels = "a") &
+  theme(
+    plot.margin = margin(r = 4, b = 4),
+    plot.tag.location = "panel",
+    plot.tag.position = c(0.05,0.97)
+  )
+```
+```{r}
+ggsave(filename = "figures/fig-3.pdf", width = 18, height = 12, units = "cm")
+```
+
+## Thymidine 
+
+```{r}
+tmp <- readxl::read_excel("data/amplicons/hydrochemistry.xlsx", sheet = 5)
+```
+
+```{r}
+p1 <- tmp %>% 
+  ggplot(aes(
+    x = time,
+    y = abun
+  )) +
+  geom_pointrange(aes(
+    ymin = abun-abun.se, ymax = abun + abun.se)) +
+  geom_curve(x = 0, xend = 9, y = 0.55, yend = 1.695, curvature = 0.3, linewidth = 0.5) +
+  #geom_smooth(se = FALSE, color = "black", lwd = 0.5, span = 10) +
+  scale_x_continuous(n.breaks = 6, name = "Time (days)") +
+  labs(
+    x = "Time (days)",
+    y = expression("Cell number (dm"^"-3"*")")
+    ) + 
+  theme_tidy() +
+  theme(
+    axis.title.y.right = element_text(angle = 90),
+    legend.position = "inside",
+    legend.position.inside = c(0.12, 0.88),
+    legend.title = element_blank(),
+    aspect.ratio = 2
+  )
+
+p1
+```
+```{r}
+p2 <- tmp %>% 
+  ggplot(aes(
+    x = time,
+    y = ht
+  )) +
+  geom_pointrange(aes(
+    ymin = ht-ht.se, ymax = ht + ht.se)) +
+  geom_curve(x = 0, xend = 9, y = 1.945, yend = 33.75, curvature = 0.4) +
+  #geom_smooth(se = FALSE, color = "black", lwd = 0.5, span = 10) +
+  scale_x_continuous(n.breaks = 6, name = "Time (days)") +
+  labs(
+    x = "Time (days)",
+    y = expression(phantom()^"3"*"H-thymidine uptake ("%*%"10"^"-13"*" mol dm"^"-3"*" h"^"-1"*")")
+    ) + 
+  theme_tidy() +
+  theme(
+    axis.title.y.right = element_text(angle = 90),
+    legend.position = "inside",
+    legend.position.inside = c(0.12, 0.88),
+    legend.title = element_blank(),
+    aspect.ratio = 2
+  )
+
+p2
+```
+
+```{r}
+tmp <- readxl::read_excel("data/amplicons/hydrochemistry.xlsx", sheet = 6)
+
+p3 <- tmp %>%
+  ggplot(aes(
+    x = ta,
+    y = fct_reorder(taxa, ta)
+  )) + 
+  geom_col(width = 0.3, fill = "#F0F0F0", color = "black") +
+  theme_tidy() + xlab("Thymidine-adenosine content (%)") +
+  theme(
+    axis.title.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    aspect.ratio = 2.0
+  )
+
+p3
+```
+```{r}
+p1 + p2 + p3 + plot_annotation(tag_levels = "a") &
+  theme(
+    plot.tag.location = "panel",
+    plot.tag.position = c(0.05, 0.97)
+  )
+```
+
+```{r}
+ggsave(filename = "figures/fig-4.pdf", width = 18, height = 10, units = "cm")
+```

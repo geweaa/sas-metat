@@ -32,11 +32,12 @@ other-links:
         href: https://bookshop.se
 ---
 
+# Read input files
 
 ```{r libraries, include=FALSE}
 library(tidyverse)
 source("../Protocols/theme.R")
-knitr::opts_chunk$set(cache = TRUE)
+knitr::opts_chunk$set(cache = FALSE)
 ```
 
 
@@ -52,21 +53,12 @@ The file params.yaml contained the following relevant parameters:
 Apart from this, the pipeline was run on default parameters. GTDB release 220 was used for taxonomic annotation.
 
 ```{r read the taxonomy, message=FALSE}
-tax <- read_tsv("data/gtdb-tidy.tsv.gz", show_col_types = F) %>%
-  filter(domain != "Uncl." & domain != "No domain")
+tax <- read_tsv("data/gtdb-tidy.tsv.gz", show_col_types = F)
 ```
 
 
-Check photosynthesis pathways using pathway id
-Check C fixation (Calvin cycle) Cyanobacteria
-Check thimidine uptake of Nitrosopumilus: it releases thimidine so check for transporters
-Find out which primers were used for the 16S amplicons and coordinate with Pauline
-Check with clade further oxidizes nitrite to nitrate
-Influence of ammonium oxidation on oxygen consumption
-
 ```{r read the meta-t files}
 tpm <- read_tsv("data/megahit.prokka.counts.tsv.gz", show_col_types = F) %>% 
-  select(orf, sample, count, tpm) %>%
   mutate(sample = gsub("R", ".", sample)) %>%
   mutate(sample = factor(sample, levels = c(
     "S1.1", "S1.2", "S2.1", "S2.2", "S3.1", "S3.2", "S4.1", "S4.2", "S5.1", "S6.1", 
@@ -74,15 +66,13 @@ tpm <- read_tsv("data/megahit.prokka.counts.tsv.gz", show_col_types = F) %>%
   )))
 
 meta <- read_tsv("data/sample_key.tsv", show_col_types = FALSE) %>%
-  rename_with(tolower) %>%
   mutate(station = as.character(station)) %>%
   mutate(sample = gsub("R", ".", sample)) %>%
-  select(-`user id`, -`>=q30(%)`) %>%
   mutate(sample = factor(sample, levels = c(
     "S1.1", "S1.2", "S2.1", "S2.2", "S3.1", "S3.2", "S4.1", "S4.2", "S5.1", "S6.1", 
     "S5.2", "S6.2", "S7.1", "S7.2", "S8.1", "S8.2", "S9.1", "S9.2", "S10.1", "S10.2"
   ))) %>%
-  mutate(depth = factor(depth, levels = c("10m", "chlMax")))
+  mutate(layer = factor(layer, levels = c("10m", "chlMax")))
 ```
 
 In total, there are `r nrow(meta)` metatranscriptomes from five stations. At every station, samples were taken in duplicates from 10 m depth and from chl. max. On average, each sample has `r round(mean(meta$mreads), digits = 1)` million reads (sd `r sd(meta$mreads) %>% round(digits = 1)`, n = 20). Off all the transcripts, 53.0 % was functionally annotated (Eggnog mapper), 36.5 % was functionally annotated including a KO reference, 45.7 % of the transcripts was annotated on phylum level, 45.7 % on order level, 44.8 % on genus level, and 32.7 % on species level. 
@@ -90,8 +80,7 @@ In total, there are `r nrow(meta)` metatranscriptomes from five stations. At eve
 25.2 % of the transcript were functionally annotated with Prokka. A summary of the bioinformatic pipeline will soon be added to this introduction.
 
 ```{r read the functional annotations}
-eggnog <- read_tsv("data/megahit.prokka.emapper.tsv.gz", show_col_types = F) %>%
-  rename_with(tolower) %>%
+eggnog <- read_tsv("data/emapper-tidy.tsv.gz", show_col_types = F) %>%
   mutate(kegg_ko = gsub("ko:", "", kegg_ko))
 ```
 
@@ -99,45 +88,44 @@ eggnog <- read_tsv("data/megahit.prokka.emapper.tsv.gz", show_col_types = F) %>%
 
 ```{r define colors}
 cols.phylum <- c( # Sorted on abundance
-  "Proteobacteria" = "#C7B19C",
-  "Thermoproteota" = "#A2A475",
+  "Pseudomonadota" = "#C7B19C",
   "Thermoplasmatota" = "#972D15",
-  "Cyanobacteria" = "#D69C4E",
   "Bacteroidota" = "#FAEFD1",
+  "Cyanobacteriota" = "#D69C4E",
+  "Thermoproteota" = "#A2A475",
   "Marinisomatota" = "#00A08A",
   "Chloroflexota" = "#D8B70A",
-  "Actinobacteriota" = "#1B5331",
+  "SAR324" = "#1B5331",
   "Other" = "#046C9A",
   "Unidentified" = "#D5D5D3"
 )
 
 cols.order <- c( # Sorted on abundance
-  "Pseudomonadales" = "#C7B19C",
-  "Nitrososphaerales" = "#A2A475",
-  "Pelagibacterales" = "#972D15",
   "Poseidoniales" = "#D69C4E",
-  "PS1" = "#FAEFD1",
-  "Cyanobacteriales" = "#00A08A",
+  "Pseudomonadales" = "#C7B19C",
+  "Pelagibacterales" = "#972D15",
   "Flavobacteriales" = "#D8B70A",
+  "PS1" = "#FAEFD1",
+  "Nitrososphaerales" = "#A2A475",
+  "Enterobacterales" = "#00A08A",
   "SAR86" = "#1B5331",
-  "Gloeomargaritales" = "#D5D5D3",
   "Other" = "#046C9A"
 )
 
 cols.genus <- c( # Sorted on abundance
-  "Pseudothioglobus" = "#C7B19C",
-  "Ketobacter" = "#A2A475",
-  "Nitrosopumilus" = "#972D15",
-  "Pelagibacter" = "#D69C4E",
+  "MGIIb-O3" = "#C7B19C",
+  "Pseudothioglobus" = "#A2A475",
+  "Pelagibacter" = "#972D15",
+  "UBA9145" = "#D69C4E",
   "HTCC2207" = "#FAEFD1",
-  "ASP10-02a" = "#00A08A",
-  "Pelagibacter_A" = "#D8B70A",
-  "JACYLR01" = "#1B5331",
-  "MGIIb-O3" = "#046C9A",
-  "AAA536-G10" = "#D5D5D3"
+  "Lutibacter" = "#00A08A",
+  "Photorhabdus" = "#D8B70A",
+  "Nitrosopumilus" = "#1B5331",
+  "ASP10-02a" = "#046C9A",
+  "Arctic96AD-7" = "#D5D5D3"
 )
 
-cols.depth <- c(
+cols.layer <- c(
   "10m" = "#78B7C5",
   "chlMax" = "#046C9A"
 )
@@ -181,7 +169,7 @@ rare %>%
   ggplot(aes(
     x = samplesize, 
     y = n.orfs,
-    colour = depth
+    colour = layer
     )) + 
   geom_line() + scale_color_manual(
     values = c("10m" = "#899DA4", "chlMax" = "#046C9A"),
@@ -489,8 +477,8 @@ p.genus <- tpm %>%
          ) +
   labs(x = '', y = expression('Relative abundance (tpm '%*% '10'^'6'*')'), fill = "Genus") +
   geom_col() +
-  scale_y_continuous(breaks = c(0, 2e5, 4e5, 6e5, 8e5, 1e6),
-                labels = c("0.0", "0.2", "0.4", "0.6", "0.8", "1.0")
+  scale_y_continuous(breaks = c(0, 1e5, 2e5, 3e5),
+                labels = c("0.0", "0.1", "0.2", "0.3")
                 ) +
   scale_fill_manual(values = cols.genus) +
   theme_tidy(legend = "bottom") + guides(fill = guide_legend(reverse = TRUE, nrow = 4)) +
@@ -563,7 +551,7 @@ p1 <- nmds.scores %>%
   ggplot(aes(x = NMDS1, 
              y = NMDS2, 
              colour = station,
-             shape = depth
+             shape = layer
              )) +
   geom_vline(xintercept = 0, linetype = 'dotted', linewidth = 0.25) +
   geom_hline(yintercept = 0, linetype = 'dotted', linewidth = 0.25) +
@@ -623,7 +611,7 @@ p2 <- nmds.scores %>%
   ggplot(aes(x = NMDS1, 
              y = NMDS2, 
              colour = station,
-             shape = depth
+             shape = layer
              )) +
   geom_vline(xintercept = 0, linetype = 'dotted', linewidth = 0.25) +
   geom_hline(yintercept = 0, linetype = 'dotted', linewidth = 0.25) +
@@ -632,7 +620,7 @@ p2 <- nmds.scores %>%
   scale_shape_discrete(labels = c("10 m", "Chl. max"), name = "", guide = "none") +
   scale_color_manual(values = cols.station, name = "Station", guide = "none") +
   theme_tidy() +
-  stat_ellipse(aes(x = NMDS1, y = NMDS2, colour = depth), 
+  stat_ellipse(aes(x = NMDS1, y = NMDS2, colour = layer), 
                geom = "polygon", show.legend = F, level = 0.90,
                fill = NA, linetype = "dashed", color = "black", linewidth = 0.2) +
   annotate('text', x = -Inf, y = -Inf, size = 7/.pt,
@@ -674,7 +662,7 @@ p.nmds <- nmds.scores %>%
   # Plot
   ggplot(aes(x = NMDS1, 
              y = NMDS2, 
-             fill = depth, color = depth
+             fill = layer, color = layer
              )) +
   geom_vline(xintercept = 0, linetype = 'dotted', linewidth = 0.25) +
   geom_hline(yintercept = 0, linetype = 'dotted', linewidth = 0.25) +
@@ -685,8 +673,8 @@ p.nmds <- nmds.scores %>%
   stat_ellipse(aes(x = NMDS1, y = NMDS2), 
                geom = "polygon", show.legend = F, level = 0.90,
                fill = NA, linetype = "dashed", linewidth = 0.4) +
-  scale_color_manual(values = cols.depth, labels = c("10 m", "Chl. max")) +  
-  scale_fill_manual(values = alpha(cols.depth, alpha = 0.3), guide = "none") +    
+  scale_color_manual(values = cols.layer, labels = c("10 m", "Chl. max")) +  
+  scale_fill_manual(values = alpha(cols.layer, alpha = 0.3), guide = "none") +    
   annotate('text', x = -Inf, y = -Inf, size = 7/.pt,
            label = paste('Stress = ', round(nmds$stress, digits = 2)),
            hjust = -0.1, vjust = -0.5) +
@@ -698,21 +686,125 @@ p.nmds <- nmds.scores %>%
     legend.position = "bottom",
     aspect.ratio = 1
     )
-
-p.nmds
 ```
+
+
+
+## Redundancy analysis (RDA)
+
+```{r}
+hydro <- readxl::read_excel("data/primarydata.xlsx", sheet = 1) %>%
+  mutate(station = as.character(station)) %>%
+  inner_join(meta, by = c("station", "layer", "replicate")) %>%
+  rename_with(tolower) %>%
+  mutate(sample = factor(sample, levels = c(
+    "S1.1", "S1.2", "S2.1", "S2.2", "S3.1", "S3.2", "S4.1", "S4.2", "S5.1", "S6.1", 
+    "S5.2", "S6.2", "S7.1", "S7.2", "S8.1", "S8.2", "S9.1", "S9.2", "S10.1", "S10.2"
+  ))) %>% arrange(sample)
+```
+
+
+```{r}
+hellinger <- tpm %>%
+  # Standard Vegan transformation: Turn table with with samples as *rows*
+  select(sample, orf, tpm) %>%
+  pivot_wider(names_from = "orf", values_from = "tpm", values_fill = 0) %>%
+  # Turn into a numeric matrix
+  column_to_rownames('sample') %>% vegan::decostand(method = "hellinger") %>%
+  rownames_to_column("sample") %>%
+  pivot_longer(-1, names_to = "orf", values_to = "hellinger")
+
+m <- hellinger %>% # Create a matrix
+  spread(orf, hellinger) %>%
+  mutate(sample = factor(sample, levels = c(
+    "S1.1", "S1.2", "S2.1", "S2.2", "S3.1", "S3.2", "S4.1", "S4.2", "S5.1", "S6.1", 
+    "S5.2", "S6.2", "S7.1", "S7.2", "S8.1", "S8.2", "S9.1", "S9.2", "S10.1", "S10.2"
+  ))) %>% arrange(sample) %>%
+  column_to_rownames("sample")
+```
+
+
+```{r rda}
+set.seed(999)
+
+vegan::rda(
+  m ~ depth + doc + tdp + tdn + chlach, 
+  correlation = T,
+  data = hydro %>%
+    column_to_rownames('sample') 
+) -> rda
+
+# This one will contain the proportions explained which we get by dividing the
+# eigenvalue of each component with the sum of eigenvalues for all components.
+p <- c(rda$CCA$eig, rda$CA$eig)/sum(c(rda$CCA$eig, rda$CA$eig))
+# This one is collecting the coordinates for arrows that will depict how the 
+# factors in our model point in the coordinate
+a <- rda$CCA$biplot %>% data.frame() %>% tibble::rownames_to_column('factor')
+
+lab <- tibble(factor = a$factor,
+            label = c("Depth", "DOC", "TDP", "TDN", "Chl.")
+) %>% inner_join(a, by = "factor")
+
+summary(rda)
+vegan::RsquareAdj(rda)
+```
+
+
+```{r}
+p.rda <- rda$CCA$wa %>% data.frame() %>% tibble::rownames_to_column('sample') %>%
+  inner_join(hydro, by = 'sample') %>%
+  ggplot(aes(x = RDA1, y = RDA2)) +
+  geom_vline(xintercept = 0, colour = "grey", linetype = "dotted") +
+  geom_hline(yintercept = 0, colour = "grey", linetype = "dotted") +
+  geom_point(aes(colour = layer, fill = layer), size = 5, shape = 21, stroke = 1) +
+  xlab(sprintf("RDA1 (%2.1f%% explained)", p[[1]] * 100)) +
+  ylab(sprintf("RDA2 (%2.1f%% explained)", p[[2]] * 100)) +
+  geom_text(aes(label = station), size = 6/.pt, color = "black") +
+  geom_segment(
+    data = a, mapping = aes(xend = RDA1/5, yend = RDA2/5), linewidth = 0.3,
+    x = 0, y = 0, arrow = arrow(length = unit(1.5, "mm"), type = "closed") 
+    ) +
+  geom_label(
+    data = lab, mapping = aes(x = RDA1/10, y = RDA2/10, label = label),
+    size = 6/.pt, parse = TRUE, label.size = 0
+    ) + 
+  # Add R-squared
+  annotate("text", x = Inf, y = -Inf, 
+           label = "paste(R ^ 2, \" = 0.56\")", 
+           size = 7/.pt, vjust = -0.5, hjust = 1.05, parse = TRUE) +
+  scale_color_manual(values = cols.layer, labels = c("10 m", "Chl. max"), name = "") +  
+  scale_fill_manual(values = alpha(cols.layer, alpha = 0.2), guide = "none") +      
+  theme_tidy() +
+  theme(
+    legend.background = element_rect(fill = NA),
+    panel.border = element_rect(fill = "transparent", linewidth = 0.75),
+    legend.text = element_text(margin = margin(r = 12, unit = "pt")),
+    legend.position = "inside",
+    legend.position.inside  = c(0.9,0.93),
+    aspect.ratio = 1.0
+    )
+```
+
+
 
 
 
 ```{r}
 #| label: fig-nmdstax
 
-p.nmds + p.genus + plot_annotation(tag_levels = c("a", "b")) & theme(
+p.rda + p.genus + plot_annotation(tag_levels = c("a", "b")) & theme(
   plot.margin = margin(r = 2),
   plot.tag.location = "panel",
-  plot.tag.position = c(0.97, 0.97),
+  plot.tag.position = c(0.03, 0.97),
   )
 ```
+
+```{r}
+ggsave(filename = "fig-4.pdf", width = 180, height = 100, units = "mm")
+ggsave(filename = "fig-4.png", width = 180, height = 100, units = "mm")
+```
+
+
 
 
 ## Broad overview community functions using COG categories
@@ -734,13 +826,13 @@ i <- eggnog %>% inner_join(cogs, by = "cog_category") %>%
 eggnog %>% inner_join(cogs, by = "cog_category") %>%
   inner_join(tpm, by = "orf") %>%
   inner_join(meta, by = "sample") %>% filter(station != "5") %>%
-  group_by(depth, cat) %>% summarise(tpm = sum(tpm), .groups = "drop") %>%
+  group_by(layer, cat) %>% summarise(tpm = sum(tpm), .groups = "drop") %>%
   # Plot
   ggplot(aes(
     x = tpm,
     y = fct_relevel(cat, i),
-    group = depth,
-    fill = depth
+    group = layer,
+    fill = layer
   )) +
   geom_col(width = 0.7, position = position_dodge(width = 0.8)) + 
   scale_fill_manual(values = c("chlMax" = "#046C9A", "10m" = "#78B7C5"), 
@@ -847,7 +939,7 @@ cols.order <- c( # Sorted on abundance
   inner_join(meta, by = "sample") %>%
   mutate(order = if_else(order %in% names(cols.order),
                          order, "Other")) %>%
-  group_by(pathway, metabolism, depth, order) %>% summarise(tpm = sum(tpm), .groups = "drop") %>%
+  group_by(pathway, metabolism, layer, order) %>% summarise(tpm = sum(tpm), .groups = "drop") %>%
   mutate(order = factor(order, levels = names(cols.order)))
 ```
 
@@ -862,7 +954,7 @@ i <- c(
 p1 <- kos %>% filter(metabolism == "cfix") %>%
   ggplot(aes(
     x = tpm,
-    y = fct_rev(fct_relevel(paste(pathway, depth), i)),
+    y = fct_rev(fct_relevel(paste(pathway, layer), i)),
     fill = fct_rev(order)
   )) +
   geom_col(width = 0.85, show.legend = TRUE) + labs(x = "", y = "") + ggtitle("C fixation") +
@@ -885,7 +977,7 @@ p1 <- kos %>% filter(metabolism == "cfix") %>%
 p2 <- kos %>% filter(metabolism == "n") %>%
   ggplot(aes(
     x = tpm, 
-    y = fct_rev(paste(pathway, depth)),
+    y = fct_rev(paste(pathway, layer)),
     fill = fct_rev(order)
     )) +
   geom_col(width = 0.85, show.legend = TRUE) + 
@@ -909,7 +1001,7 @@ The genes listed below are typically catalyze the rate limiting step of the path
 p3 <- kos %>% filter(metabolism == "c") %>%
   ggplot(aes(
     x = tpm, 
-    y = fct_rev(paste(pathway, depth)), 
+    y = fct_rev(paste(pathway, layer)), 
     fill = fct_rev(order)
     )) +
   geom_col(width = 0.85, show.legend = TRUE) + 
@@ -931,7 +1023,7 @@ p3 <- kos %>% filter(metabolism == "c") %>%
 p4 <- kos %>% filter(metabolism == "photo") %>% 
   ggplot(aes(
     x = tpm, 
-    y = fct_rev(paste(pathway, depth)),
+    y = fct_rev(paste(pathway, layer)),
     fill = fct_rev(order)
     )) +
   geom_col(width = 0.85, show.legend = TRUE) + 
@@ -998,16 +1090,16 @@ dge <- tpm %>%
   arrange(sample) %>%
   pivot_wider(values_from = "count", names_from = "sample", values_fill = 0) %>%
   column_to_rownames("kegg_ko") %>%
-  DGEList(group = meta %>% filter(sample %in% i) %>% pull(depth), lib.size = colSums(m))
+  DGEList(group = meta %>% filter(sample %in% i) %>% pull(layer), lib.size = colSums(m))
 ```
 
 The chunk below is to create the design matrix, make the contract, and run the actual analysis using the functions glmQLfit() and glmQLFTest()
 
 ```{r}
-design.mat <- model.matrix(~ 0 + meta %>% filter(sample %in% i) %>% arrange(sample) %>% pull(depth))
+design.mat <- model.matrix(~ 0 + meta %>% filter(sample %in% i) %>% arrange(sample) %>% pull(layer))
 rownames(design.mat) <- colnames(m)
 colnames(design.mat) <- c("shallow", "deep")
-contrast <- makeContrasts(depth = shallow-deep, levels = design.mat)
+contrast <- makeContrasts(layer = shallow-deep, levels = design.mat)
 
 dge <- dge %>%
   calcNormFactors() %>%
@@ -1149,7 +1241,7 @@ asv <- read_tsv("data/amplicons/ASV_tax_species.sbdi-gtdb.tsv", show_col_types =
 
 dnakey <- read_tsv("data/amplicons/sample-key.txt", show_col_types = FALSE) %>%
   mutate(station = factor(station, levels = c("5","26","42","53","56"))) %>%
-  mutate(layer = factor(layer, levels = c("10m","Chlmax")))
+  mutate(layer = factor(layer, levels = c("10m","chlMax")))
 ```
 
 
@@ -1262,6 +1354,58 @@ nmds.scores %>%
   )
 ```
 
+```{r}
+m <- seqtab %>% # Standard Vegan transformation
+  select(-relab) %>%
+  pivot_wider(values_from = "count", names_from = "seqid", values_fill = 0) %>%
+  column_to_rownames("sample") 
+
+adiv <- m %>%
+  vegan::diversity() %>% data.frame() %>%
+  rownames_to_column("sample") %>% rename(shannon = ".")
+  
+adiv <- m %>%
+  vegan::specnumber() %>% data.frame() %>%
+  rownames_to_column("sample") %>% rename(specno = ".") %>%
+  inner_join(adiv, by = "sample") %>%
+  mutate(pielou = shannon / log(specno)) %>%
+  inner_join(dnakey, by = "sample")
+```
+
+
+```{r}
+p1 <- adiv %>%
+  ggplot(aes(
+    x = layer,
+    y = pielou
+  )) + 
+  geom_boxplot() + labs(y = "Shannon diversity") +
+  scale_x_discrete(labels = c("10 m", "Chl. max"))
+
+p1 
+```
+
+
+```{r}
+p2 <- adiv %>%
+  ggplot(aes(
+    x = layer,
+    y = pielou,
+    fill = layer
+  )) + 
+  geom_boxplot() + labs(y = "Pielou's evenness") + scale_fill_manual(values = cols.layer) +
+  scale_x_discrete(labels = c("10 m", "Chl. max"))
+
+p2
+```
+```{r}
+p1 + p2 + plot_annotation(tag_levels = "a") & theme_tidy() & theme(
+  axis.title.x = element_blank(),
+  plot.tag.location = "panel",
+  plot.tag.position = c(0.03,0.98),
+  axis.ticks.x = element_blank()
+)
+```
 
 
 # Hydrochemistry
@@ -1285,9 +1429,9 @@ p1 <- tmp %>%
   theme(
     aspect.ratio = 1.5
   )
-
-p1
 ```
+
+
 ```{r}
 p2 <- tmp %>%
   ggplot(aes(
@@ -1304,9 +1448,9 @@ p2 <- tmp %>%
     axis.text.y = element_blank(),
     aspect.ratio = 1.5
   )
-
-p2
 ```
+
+
 ```{r}
 p3 <- tmp %>% na.omit() %>%
   ggplot(aes(
@@ -1323,13 +1467,13 @@ p3 <- tmp %>% na.omit() %>%
     axis.text.y = element_blank(),
     aspect.ratio = 1.5
   )
-
-p3
 ```
+
 
 ```{r}
 tmp <- readxl::read_excel("data/amplicons/hydrochemistry.xlsx", sheet = 2)
 ```
+
 
 ```{r}
 p4 <- tmp %>% 
@@ -1350,9 +1494,8 @@ p4 <- tmp %>%
     axis.text.y = element_blank(),
     axis.title.y = element_blank()
   )
-
-p4
 ```
+
 
 ```{r}
 p5 <- tmp %>% 
@@ -1373,9 +1516,9 @@ p5 <- tmp %>%
   theme(
     aspect.ratio = 1.5
   )
-
-p5
 ```
+
+
 ```{r}
 tmp <- readxl::read_excel("data/amplicons/hydrochemistry.xlsx", sheet = 3)
 
@@ -1398,9 +1541,9 @@ p6 <- tmp %>% na.omit() %>%
     axis.text.y = element_blank(),
     axis.title.y = element_blank(),
   )
-
-p6
 ```
+
+
 ```{r}
 tmp <- readxl::read_excel("data/amplicons/hydrochemistry.xlsx", sheet = 4)
 
@@ -1421,13 +1564,13 @@ p7 <- tmp %>% na.omit() %>%
     axis.text.y = element_blank(),
     axis.title.y = element_blank(),
   )
-
-p7
 ```
+
 
 ```{r}
 library(patchwork)
 ```
+
 
 ```{r}
 p1 + p2 + p3 + p4 + p5 + p6 + p7 + plot_layout(nrow = 2, guides = "collect") + plot_annotation(tag_levels = "a") &
@@ -1437,15 +1580,13 @@ p1 + p2 + p3 + p4 + p5 + p6 + p7 + plot_layout(nrow = 2, guides = "collect") + p
     plot.tag.position = c(0.05,0.97)
   )
 ```
-```{r}
-ggsave(filename = "figures/fig-3.pdf", width = 18, height = 12, units = "cm")
-```
 
 ## Thymidine 
 
 ```{r}
 tmp <- readxl::read_excel("data/amplicons/hydrochemistry.xlsx", sheet = 5)
 ```
+
 
 ```{r}
 p1 <- tmp %>% 
@@ -1470,9 +1611,9 @@ p1 <- tmp %>%
     legend.title = element_blank(),
     aspect.ratio = 2
   )
-
-p1
 ```
+
+
 ```{r}
 p2 <- tmp %>% 
   ggplot(aes(
@@ -1496,9 +1637,8 @@ p2 <- tmp %>%
     legend.title = element_blank(),
     aspect.ratio = 2
   )
-
-p2
 ```
+
 
 ```{r}
 tmp <- readxl::read_excel("data/amplicons/hydrochemistry.xlsx", sheet = 6)
@@ -1515,9 +1655,9 @@ p3 <- tmp %>%
     axis.ticks.y = element_blank(),
     aspect.ratio = 2.0
   )
-
-p3
 ```
+
+
 ```{r}
 p1 + p2 + p3 + plot_annotation(tag_levels = "a") &
   theme(
@@ -1526,6 +1666,82 @@ p1 + p2 + p3 + plot_annotation(tag_levels = "a") &
   )
 ```
 
+
+## Polar map
+
 ```{r}
-ggsave(filename = "figures/fig-4.pdf", width = 18, height = 10, units = "cm")
+library(sf)
+library(terra)
+sea <- st_read("../Protocols/World_Seas_IHO_v3/") %>% filter(NAME == "Arctic Ocean")
+sea <- vect(sea)
+
+bathy <- marmap::getNOAA.bathy(-180, 180, 60, 90, res = 20, keep = TRUE)
+bathy <- marmap::as.raster(bathy)
+bathy <- as(bathy, "SpatRaster")
+masked <- mask(bathy, sea)
+
+masked <- as(masked, "Raster")
+masked <- as(masked, "SpatialPixelsDataFrame") 
+masked <- data.frame(masked)
+
+stations <- meta %>%
+  select(station, lat, long) %>%
+  distinct()
+
+remove(sea, bathy)
 ```
+
+
+
+
+```{r}
+# Defines the x axes required
+wm <- map_data("world") %>% filter(lat > 60) %>% tibble()
+x_lines <- seq(-120,180, by = 60)
+
+ggplot() +
+  # Draw the Arctic sea
+  geom_tile(
+    data = masked, 
+    aes(x = x, y = y, fill = layer)) +
+  # Draw the countries
+  geom_polygon(
+    data = wm, 
+    aes(x = long, y = lat, group = group), 
+    fill = "#D9D9D9", linewidth = 0, alpha = 0.8) +
+  # Convert to polar coordinates
+  coord_map("ortho", orientation = c(90, 0, 0)) +
+  scale_y_continuous(breaks = NULL, labels = NULL) +
+  scale_x_continuous(breaks = NULL) + 
+  labs(x = "", y = "") +
+  geom_text(
+    aes(x = x_lines, y = 58, label = c("120°W", "60°W", "0°", "60°E", "120°E", "180°W")
+    ), 
+    size = 6/.pt) +
+  geom_hline(
+    aes(yintercept = 60), 
+    size = 0.5)  + 
+  scale_fill_gradient(low = "#0570b0", high = "#f7fbff", guide = "none") + 
+  scale_color_manual(values = cols.station, guide = "none") +
+  geom_hline(
+    aes(yintercept = 66.34), 
+    linewidth = 0.25, linetype = "dashed")  +
+  annotate("text", x = 180, y = 65.5, hjust = -0.2, label = "Arctic circle", size = 6/.pt) +
+  annotate("text", x = 180, y = 80, label = "Arctic Ocean", color = "#0570b0", fontface = "bold", size = 6/.pt) +
+  geom_segment(
+    aes(y = 60, yend = 90, x = x_lines, xend = x_lines), 
+    linetype = "dashed", linewidth = 0.25, color = "black") +
+  geom_point(
+    data = stations, 
+    aes(x = long, y = lat, color = station), 
+    size = 3.5) +
+  geom_text(
+    data = stations, 
+    aes(x = long, y = lat, label = station), 
+    size = 6/.pt, color = "white") +  
+  theme(
+    panel.background = element_blank(),
+    panel.grid.major = element_line(linewidth = 0.25, linetype = 'dashed', colour = "black")
+    )
+```
+

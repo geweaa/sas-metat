@@ -854,7 +854,7 @@ eggnog %>% inner_join(cogs, by = "cog_category") %>%
 ```
 
 
-## Functional annotation - most abundant KOs
+# Functional annotation - most abundant KOs
 
 
 ```{r}
@@ -883,14 +883,14 @@ genelist <- read_tsv("data/genelist.txt", show_col_types = FALSE) %>%
 
 ```{r}
 cols.order <- c( # Sorted on abundance
-  "Rhizobiales_B" = "#D69C4E",
-  "Streptomycetales" = "#972D15",
-  "Rhodobacterales" = "#D8B70A",
-  "PS1" = "#FAEFD1",
+  "Nitrososphaerales" = "#A2A475",
+  "Flavobacteriales" = "#D8B70A",
   "Pseudomonadales" = "#C7B19C",
   "Burkholderiales" = "#D5D5D3",
+  "Chitinophagales" = "#972D15",
+  "Poseidoniales" = "#D69C4E",
+  "PS1" = "#FAEFD1",
   "SAR86" = "#1B5331",
-  "Nitrososphaerales" = "#A2A475",
   "Cyanobacteria" = "#00A08A",
   "Other" = "#046C9A"
 )
@@ -937,10 +937,10 @@ cols.order <- c( # Sorted on abundance
   inner_join(tax, by = "orf") %>% inner_join(tpm, by = "orf", relationship = "many-to-many") %>%
   mutate(order = if_else(phylum == "Cyanobacteria", true = "Cyanobacteria", false = order)) %>%
   inner_join(meta, by = "sample") %>%
-  mutate(order = if_else(order %in% names(cols.order),
-                         order, "Other")) %>%
-  group_by(pathway, metabolism, layer, order) %>% summarise(tpm = sum(tpm), .groups = "drop") %>%
-  mutate(order = factor(order, levels = names(cols.order)))
+  #mutate(order = if_else(order %in% names(cols.order),
+  #                       order, "Other")) %>%
+  group_by(pathway, metabolism, layer, phylum) %>% summarise(tpm = sum(tpm), .groups = "drop")#%>%
+  #mutate(order = factor(order, levels = names(cols.order)))
 ```
 
 
@@ -969,6 +969,8 @@ p1 <- kos %>% filter(metabolism == "cfix") %>%
     ) %>% rev()) +
   annotate("text", x = 6000, y = 7.5, label = "98 % Nitrosopumilus sp.", hjust = 0, size = 6 / .pt) +
   annotate("segment", x = 5000, xend = 5000, y = 6.6, yend = 8.4)
+
+p1
 ```
 
 
@@ -992,6 +994,8 @@ p2 <- kos %>% filter(metabolism == "n") %>%
     "Dissimilatory nitrite reduction", "",
     "Nitrification", ""
   ) %>% rev())
+
+p2
 ```
 
 

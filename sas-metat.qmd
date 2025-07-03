@@ -105,11 +105,10 @@ In total, there are `r nrow(meta)` metatranscriptomes from five stations. At eve
 eggnog <- read_tsv("data/emapper-tidy.tsv.gz", show_col_types = F) %>%
   mutate(kegg_ko = gsub("ko:", "", kegg_ko)) %>%
   filter(kegg_ko != "-") %>%
-  select(orf, evalue, cog = cog_category, ko = kegg_ko, module = kegg_module, preferred_name, description)
+  select(orf, evalue, cog = cog_category, ko = kegg_ko, module = kegg_module, name = preferred_name, description)
 
-prokka <- read_tsv("data/summary_tables/megahit.prokka.prokka-annotations.tsv.gz", show_col_types = F) %>%
-  select(orf, ec = ec_number, gene, product, name) %>%
-  filter(product != "hypothetical protein")
+prokka <- read_tsv("data/prokka-tidy.tsv.gz", show_col_types = F) %>%
+    filter(product != "hypothetical protein")
 ```
 
 # Read input files DNA
@@ -322,6 +321,7 @@ t <- tpm %>%
 t %>% arrange(desc(mean.tpm)) %>% knitr::kable()
 ```
 
+
 ```{r prepare the taxonomy, include=FALSE}
 taxref <- tax %>%
   left_join(t %>% transmute(phylum, topphylum = phylum), by = "phylum") %>%
@@ -408,6 +408,7 @@ t <- tpm %>%
 
 t %>% arrange(desc(mean.tpm)) %>% knitr::kable()
 ```
+
 
 ```{r prepare the taxonomy - order, include=FALSE}
 taxref <- tax %>%
@@ -655,8 +656,6 @@ p.rda
 
 ```{r}
 #| label: fig-nmdstax
-#| fig-width: 18/2.53
-
 
 p1 + p.rda + plot_annotation(tag_levels = c("a", "b")) & theme(
   plot.margin = margin(r = 4),
@@ -775,8 +774,8 @@ cols.order <- c( # Sorted on abundance
   "UBA2979" = "#00A08A",
   "Cyanobacteriota" = "#D69C4E",
   "UBA1151" = "#9986A5",
-  "Unidentified" = "#D5D5D3"
-)
+  "Other" = "#D5D5D3"
+) %>% rev()
 
  kos <- eggnog %>% 
   mutate(pathway = case_when(
@@ -889,10 +888,10 @@ i <- list(
    inner_join(tax, by = "orf") %>% inner_join(tpm, by = "orf", relationship = "many-to-many") %>%
    mutate(order = if_else(phylum == "Cyanobacteriota", true = "Cyanobacteriota", false = order)) %>%
    inner_join(meta, by = "sample") %>%
-   group_by(pathway, metabolism, layer, order) %>% summarise(tpm = sum(tpm), .groups = "drop") %>%
    # Filter out transcripts without taxonomy
-   replace_na(list("order" = "Unidentified")) %>%
-   filter(order %in% names(cols.order)) %>%
+   replace_na(list("order" = "Other")) %>%
+   mutate(order = if_else(order %in% names(cols.order), order, "Other")) %>%
+   group_by(pathway, metabolism, layer, order) %>% summarise(tpm = sum(tpm), .groups = "drop") %>%
    # Assign a dummy value for nitrogen fixation
    rbind(i) %>%
    mutate(pathway = if_else(
@@ -900,12 +899,13 @@ i <- list(
    ))
 ```
 
+
 ```{r}
 p1 <- kos %>% filter(metabolism == "Carbon fixation") %>%
   ggplot(aes(
     x = tpm, 
     y = fct_rev(pathway),
-    fill = fct_rev(order)
+    fill = fct_relevel(order, names(cols.order))
     )) +
   geom_col(show.legend = TRUE) + 
   scale_fill_manual(values = cols.order, drop = FALSE) +
@@ -916,7 +916,7 @@ p1 <- kos %>% filter(metabolism == "Carbon fixation") %>%
                      pull(pathway) %>% rev()
                      ) +
   labs(x = "", y = "") + 
-  theme_tidy() 
+  theme_tidy(fontsize = 5) 
 
 p1
 ```
@@ -927,7 +927,7 @@ p2 <- kos %>% filter(metabolism == "Central C metabolism") %>%
   ggplot(aes(
     x = tpm, 
     y = fct_rev(pathway),
-    fill = fct_rev(order)
+    fill = fct_relevel(order, names(cols.order))
     )) +
   geom_col(show.legend = TRUE) + 
   scale_fill_manual(values = cols.order, drop = FALSE) +
@@ -938,7 +938,9 @@ p2 <- kos %>% filter(metabolism == "Central C metabolism") %>%
                      pull(pathway) %>% rev()
                      ) +
   labs(x = "", y = "") + 
-  theme_tidy() 
+  theme_tidy(fontsize = 5)
+
+p2
 ```
 
 The genes listed below are typically catalyze the rate limiting step of the pathway. Like all other analysis, filtering is done based on the KOs and grouping of the KOs is avoided.
@@ -948,7 +950,7 @@ p3 <- kos %>% filter(metabolism == "N metabolism") %>%
   ggplot(aes(
     x = tpm, 
     y = fct_rev(pathway),
-    fill = fct_rev(order)
+    fill = fct_relevel(order, names(cols.order))
     )) +
   geom_col(show.legend = TRUE) + 
   scale_fill_manual(values = cols.order, drop = FALSE) +
@@ -959,7 +961,9 @@ p3 <- kos %>% filter(metabolism == "N metabolism") %>%
                      pull(pathway) %>% rev()
                      ) +
   labs(x = "", y = "") + 
-  theme_tidy() 
+  theme_tidy(fontsize = 5) 
+
+p3
 ```
 
 ```{r}
@@ -967,7 +971,7 @@ p4 <- kos %>% filter(metabolism == "Photosystems and ATP") %>%
   ggplot(aes(
     x = tpm, 
     y = fct_rev(pathway),
-    fill = fct_rev(order)
+    fill = fct_relevel(order, names(cols.order))
     )) +
   geom_col(show.legend = TRUE) + 
   scale_fill_manual(values = cols.order, drop = FALSE) +
@@ -978,7 +982,9 @@ p4 <- kos %>% filter(metabolism == "Photosystems and ATP") %>%
                      pull(pathway) %>% rev()
                      ) +
   labs(x = "", y = "") + 
-  theme_tidy() 
+  theme_tidy(fontsize = 5) 
+
+p4
 ```
 
 @fig-elements shows the tpm for each representative KO summed over all the samples (n = 20). N transformation, central C metabolism, and photosynthesis plus aerobic respiration. Udh uronate dehydrogenase, edd phosphogluconate dehydratase, icd isocitrate dehydrogenase, ICL isocitrate lyase, G6PD glucose-6-phosphate 1-dehydrogenase, PRPP phosphoribosyl pyrophosphate, RPPK ribose-phosphate pyrophosphokinase, ED: Entner–Doudoroff. Note how the transcripts involved in carbon fixation are predominantly represented by the Streptomycetales (Streptomyces sp.) and the Burkholderiales (Nitrosomonas sp.) while only few transcripts were detected affiliated with cyanobacteria. The oxidation from ammonia to nitrite (nitrification) is performed by Nitrosopumilus sp. while the further oxidation from nitrite to nitrate (K00370) is done by a representative from the family Nitrospinaceae.
@@ -988,19 +994,22 @@ p4 <- kos %>% filter(metabolism == "Photosystems and ATP") %>%
 #| fig-cap: KO plot
 
 (p1 + p2) / (p3 + p4) + 
-  plot_annotation(tag_levels = list(c('a: C fixation', 'b: Central C metabolism', 'c: N metabolism', 'd: Photosystems and ATP synthesis'))) + 
+  plot_annotation(tag_levels = list(c('C fixation', 'Central C metabolism', 'N metabolism', 'Photosystems and ATP synthesis'))) + 
   plot_layout(guides = "collect") & guides(fill = guide_legend(reverse = TRUE)) &
   theme(
     legend.key.height = unit(3.5, "mm"), legend.key.width = unit(2.5, "mm"),
     plot.margin = margin(t = 10),
     plot.tag.location = "panel",
-    plot.tag.position = c(0.03, 1.07), plot.tag = element_text(hjust = 0, size = 6, face = "plain"),
+    plot.tag.position = c(0.5, 1.05), plot.tag = element_text(size = 5, face = "plain"),
     axis.ticks.y = element_blank(),
     legend.position = "bottom", legend.title = element_blank(),
     legend.margin = margin(t = -10), legend.text = element_text(margin = margin(l = 2))
     )
 ```
 
+```{r}
+ggsave("figures/ko-elements.pdf", width = 180, height = 120, units = "mm")
+```
 
 
 # Linking metat to morphology (SEM)
@@ -1010,138 +1019,189 @@ p4 <- kos %>% filter(metabolism == "Photosystems and ATP") %>%
 
 kos <- eggnog %>%
   separate_longer_delim(ko, delim = ",") %>%
-  mutate(ko = case_when(
-    # Pilus system: Twitching motility proteins
-    #ko == 'K02657' ~ 'twitching motility two-component system response regulator PilG',
-    #ko == 'K02658' ~ 'twitching motility two-component system response regulator PilH',
-    #ko == 'K02659' ~ 'pilI; twitching motility protein PilI',
-    #ko == 'K02660' ~ 'pilJ; twitching motility protein PilJ',
-    #ko == 'K02661' ~ 'pilK; type IV pilus assembly protein PilK',
-    #ko == 'K06596' ~ 'chpA; chemosensory pili system protein ChpA (sensor histidine kinase/response regulator)',
-    #ko == 'K02667' ~ 'pilR, pehR; two-component system, NtrC family, response regulator PilR',
-    #ko == 'K02668' ~ 'pilS, pehS; two-component system, NtrC family, sensor histidine kinase PilS [EC:2.7.13.3]',
-    #ko == 'K02669' ~ 'pilT; twitching motility protein PilT',
-    #ko == 'K02670' ~ 'pilU; twitching motility protein PilU',
+  mutate(label = case_when(
     # Pilus system: Pilus assembly proteins
-    ko == 'K02650' ~ 'pilA; type IV pilus assembly protein',
-    ko == 'K02652' ~ 'pilB; type IV pilus assembly protein',
-    ko == 'K02653' ~ 'pilC; type IV pilus assembly protein',
-    ko == 'K02654' ~ 'pilD, pppA; leader peptidase (prepilin peptidase) / N-methyltransferase',
-    ko == 'K02656' ~ 'pilF; type IV pilus assembly protein',
-    ko == 'K02666' ~ 'pilQ; type IV pilus assembly protein',
-    ko == 'K02665' ~ 'pilP; type IV pilus assembly protein',
-    ko == 'K02664' ~ 'pilO; type IV pilus assembly protein',
-    ko == 'K23985' ~ 'pilOP; type IV pilus assembly protein',
-    ko == 'K02663' ~ 'pilN; type IV pilus assembly protein',
-    ko == 'K02662' ~ 'pilM; type IV pilus assembly protein',
-    ko == 'K02676' ~ 'pilZ; type IV pilus assembly protein',
-    ko == 'K02671' ~ 'pilV; type IV pilus assembly protein',
-    ko == 'K02672' ~ 'pilW; type IV pilus assembly protein',
-    ko == 'K02673' ~ 'pilX; type IV pilus assembly protein',
-    ko == 'K02674' ~ 'pilY1; type IV pilus assembly protein',
-    ko == 'K02675' ~ 'pilY2; type IV pilus assembly protein',
-    ko == 'K02655' ~ 'pilE; type IV pilus assembly protein',
-    ko == 'K02651' ~ 'flp, pilA; pilus assembly protein',
-    ko == 'K02278' ~ 'cpaA, tadV; prepilin peptidase',
-    ko == 'K02279' ~ 'cpaB, rcpC; pilus assembly protein',
-    ko == 'K02280' ~ 'cpaC, rcpA; pilus assembly protein',
-    ko == 'K02281' ~ 'cpaD; pilus assembly protein',
-    ko == 'K02282' ~ 'cpaE, tadZ; pilus assembly protein',
-    ko == 'K02283' ~ 'cpaF, tadA; pilus assembly protein',
-    # EPS biosynthesis: biofilm formation E. coli
-    ko == "K13693" ~ 'wcaA',
-    ko == "K03819" ~ 'wcaB',
-    ko == "K13684" ~ 'wcaC',
-    ko == "K13683" ~ 'wcaE',
-    ko == "K03818" ~ 'wcaF',
-    ko == "K16710" ~ 'wcaK',
-    ko == "K16703" ~ 'wcaL',
-    ko == "K03208" ~ 'wcaI',
-    ko == "K03606" ~ 'wcaJ',
-    # EPS biosynthesis: biofilm formation P. aeruginosa (alg[8,44,I,J,F,X]) not detected in data
-    # EPS biosynthesis: biofilm formation P. aeruginosa (pslACFHI polysaccharide) not detected in data
-    # EPS biosynthesis
-    ko == 'K19420' ~ 'epsA	Exopolysaccharide_production',
-    ko == 'K00903' ~ 'epsB	Exopolysaccharide_production',
-    ko == 'K16712' ~ 'EPS I polysaccharide export inner membrane protein EpsE',
-    ko == 'K16713' ~ 'EPS I polysaccharide export inner membrane protein EpsF',
-    ko == 'K19421' ~ 'polysaccharide biosynthesis protein epsC',
-    ko == 'K19422' ~ 'glycosyltransferase epsD',
-    ko == 'K19418' ~ 'epsK; membrane protein EpsK',
-    # Fimbrial proteins
-    ko == 'K07345' ~ 'fimA; major type 1 subunit fimbrin (pilin)',
-    ko == 'K07346' ~ 'fimC; fimbrial chaperone protein',
-    ko == 'K07347' ~ 'fimD, fimC, mrkC, htrE, cssD; outer membrane usher protein',
-    ko == 'K07348' ~ 'fimF; minor fimbrial subunit',
-    ko == 'K07349' ~ 'fimG; minor fimbrial subunit',
-    ko == 'K07350' ~ 'fimH; minor fimbrial subunit',
-    ko == 'K07351' ~ 'fimI; fimbrial protein',
-    ko == 'K07352' ~ 'sfmA; type 1 fimbrial protein',
-    ko == 'K07353' ~ 'sfmC; fimbrial chaperone protein',
-    ko == 'K07354' ~ 'sfmD; outer membrane usher protein',
-    ko == 'K07355' ~ 'sfmF; fimbrial-like protein',
-    ko == 'K07356' ~ 'sfmH; fimbrial protein',
-    ko == 'K27078' ~ 'cupE; spore coat protein U domain-containing protein, fimbrial subunit CupE1/2/3/6',
+    ko %in% c('K02650','K02651','K02652','K02653','K02654','K02656','K02662','K02663','K02664','K02665','K02666',
+              'K02671','K02672','K02673','K02674','K02675','K02655','K23985','K02676') ~ 'Pilli (pilAVCDEFMNOPQVWYZ): Extracellular appendages',
+    ko %in% c('K02278','K02279','K02280','K02281','K02282','K02283') ~ "Pilli (cpaBCDEF): Extracellular appendages",
+    # EPS biosynthesis:
+    ko %in% c("K13693","K13683","K03818","K16710","K16703","K03208","K03606") ~ "wcaAEFKLIJ: EPS biosynthesis",
+    ko %in% c("K00903","K19421","K19422") ~ "epsBCD: EPS biosynthesis",
+    ko %in% c("K00703","K00975","K00688") ~ "glgACP: EPS biosynthesis", # Biofilm formation E. coli (map02026)
+    ko == 'K03563' ~ 'csrA: EPS biosynthesis', # Biofilm formation E. coli (map02026)
     # Flagellar system
-    ko == 'K02410' ~ 'fliG; flagellar motor switch protein FliG',
-    ko == 'K02416' ~ 'fliM; flagellar motor switch protein FliM',
-    ko == 'K02417' ~ 'fliN; flagellar motor switch protein FliN',
+    ko %in% c("K02410","K02416","K02417") ~ "Flagella (fliACDEFGKLMNS): Extracellular appendages",
     # M, S, P and L rings
-    ko == 'K02409' ~ 'fliF; flagellar M-ring protein FliF',
-    ko == 'K02394' ~ 'flgI; flagellar P-ring protein FlgI',
-    ko == 'K02386' ~ 'flgA; flagellar basal body P-ring formation protein FlgA',
-    ko == 'K02393' ~ 'flgH; flagellar L-ring protein FlgH',
-    ko == 'K02415' ~ 'fliL; flagellar protein FliL',
+    ko %in% c("K02409","K02415") ~ "Flagella (fliACDEFGKLMNS): Extracellular appendages",
+    ko %in% c("K02394","K02386","K02393") ~ "Flagella (flgABCDEFGHIJKL): Extracellular appendages",
     # Rod and hook
-    ko == 'K02408' ~ 'fliE; flagellar hook-basal body complex protein FliE',
-    ko == 'K02414' ~ 'fliK; flagellar hook-length control protein FliK',
-    ko == 'K02387' ~ 'flgB; flagellar basal-body rod protein FlgB',
-    ko == 'K02388' ~ 'flgC; flagellar basal-body rod protein FlgC',
-    ko == 'K02389' ~ 'flgD; flagellar basal-body rod modification protein FlgD',
-    ko == 'K02391' ~ 'flgF; flagellar basal-body rod protein FlgF',
-    ko == 'K02392' ~ 'flgG; flagellar basal-body rod protein FlgG',
-    ko == 'K02395' ~ 'flgJ; peptidoglycan hydrolase FlgJ',
-    ko == 'K02390' ~ 'flgE; flagellar hook protein FlgE',
-    ko == 'K02396' ~ 'flgK; flagellar hook-associated protein 1',
-    ko == 'K02397' ~ 'flgL; flagellar hook-associated protein 3 FlgL',
-    ko == 'K02399' ~ 'flgN; flagellar biosynthesis protein FlgN',
+    ko %in% c('K02408','K02414') ~ "Flagella (fliACDEFGKLMNS): Extracellular appendages",
+    ko %in% c('K02387','K02388','K02389','K02391','K02392','K02395','K02390','K02396','K02397','K02399') ~ "Flagella (flgABCDEFGHIJKL): Extracellular appendages",
     # Filament
-    ko == 'K18475' ~ 'fliB; lysine-N-methylase [EC:2.1.1.-]',
-    ko == 'K02406' ~ 'fliC, hag; flagellin',
-    ko == 'K02407' ~ 'fliD; flagellar hook-associated protein 2',
-    ko == 'K02422' ~ 'fliS; flagellar secretion chaperone FliS',
-    ko == 'K02423' ~ 'fliT; flagellar protein FliT',
+    ko %in% c('K02406','K02407','K02422') ~ "Flagella (fliACDEFGKLMNS): Extracellular appendages",
     # Stator
-    ko == 'K02403' ~ 'flhD; flagellar transcriptional activator FlhD',
-    ko == 'K02402' ~ 'flhC; flagellar transcriptional activator FlhC',
-    ko == 'K02405' ~ 'fliA, whiG; RNA polymerase sigma factor FliA',
-    ko == 'K02556' ~ 'motA; chemotaxis protein MotA',
-    ko == 'K02557' ~ 'motB; chemotaxis protein MotB',
-    ko == 'K10564' ~ 'motC; chemotaxis protein MotC',
-    ko == 'K10565' ~ 'motD; chemotaxis protein MotD'
+    ko == 'K02405' ~ "Flagella (fliACDEFGKLMNS): Extracellular appendages",
+    ko %in% c('K02556','K02557') ~ 'Flagella (motAB): Extracellular appendages',
+    # Nanotube
+    ko %in% c("K02418","K02419","K02420") ~ 'Nanotubes (fliOPQ): Extracellular appendages',
+    ko == 'K02400' ~ 'Nanotubes (flhA): Extracellular appendages',
+    ko == 'K09769' ~ 'Nanotubes (ymdB): Extracellular appendages',
+    # Stalk
+    ko %in% c("K07657","K07636") ~ "Stalk (phoBR): Extracellular appendages",
+    ko %in% c("K02038","K02036","K02037") ~ "Stalk (pstABC): Extracellular appendages",
+    # Vesicle
+    ko == 'K04754' ~ 'vacJ: Vesicle formation',
+    ko == 'K03640' ~ 'pal: Vesicle formation',
+    ko == 'K04771' ~ 'degP: Vesicle formation',
+    ko == 'K09476' ~ 'ompF: Vesicle formation',
+    ko %in% c('K03646','K03641','K03560','K03562') ~ 'tolABRQ: Vesicle formation',
+    ko %in% c('K02841') ~ 'rfaC: Vesicle formation'
   )) %>%
-  filter(!is.na(ko)) %>%
-  inner_join(tax, by = "orf") %>% filter(order %in% names(cols.order)) %>%
+  filter(!is.na(label)) %>%
+  separate_wider_delim(label, delim = ": ", names = c("label", "category")) %>%
+  inner_join(tax, by = "orf") %>% 
   inner_join(tpm, by = "orf") %>% 
-  inner_join(meta, by = "sample") %>%
-  group_by(ko, order) %>% summarise(tpm = sum(tpm), .groups = "drop")
+  group_by(label, order, category) %>% summarise(tpm = sum(tpm), .groups = "drop")
 ```
 
 
 ```{r}
+#| label: color palette morphology
+
 kos %>%
+  group_by(order) %>%
+  summarise(n = sum(tpm)) %>% filter(!is.na(order)) %>%
+  arrange(desc(n))
+```
+
+
+
+
+```{r}
+cols.order <- c( # Sorted on abundance
+  "Pseudomonadales" = "#C7B19C",
+  "Pelagibacterales" = "#972D15",
+  "Flavobacteriales" = "#D8B70A",
+  "PS1" = "#FAEFD1",
+  "Nitrososphaerales" = "#A2A475",
+  "Marinisomatales" = "#79402E",
+  "Puniceispirillales_A" = "#1B5331",
+  "SAR324" = "#046C9A",
+  "Enterobacterales" = "#00A08A",
+  "Rhodospirillales_A" = "#D69C4E"
+) %>% rev()
+
+kos %>%
+  filter(order %in% names(cols.order)) %>%
+  mutate(order = factor(order, names(cols.order))) %>%
   ggplot(aes(
     x = tpm, 
-    y = ko,
+    y = fct_rev(label),
     fill = order
     )) +
-  geom_col(width = 0.85, show.legend = TRUE) + 
+  geom_col(width = 0.85, show.legend = TRUE) +
   scale_fill_manual(values = cols.order, drop = FALSE) +
-  labs(x = "Relative abundance (tpm)", y = "")
+  labs(x = "Relative abundance (tpm)", y = "") + theme_tidy(legend = "bottom") +
+  facet_wrap(~ category, scales = "free") +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  theme(
+    legend.title = element_blank(),
+    axis.ticks.y = element_blank(),
+    legend.text = element_text(margin = margin(l = 2))
+  )
 ```
 
 ```{r}
-ggsave(filename = "figures/morph-draft.pdf", width = 180, height = 240, units = "mm")
+ggsave(filename = "figures/morph-draft.pdf", width = 180, height = 100, units = "mm")
+```
+
+
+
+# Osmoregulation
+
+```{r}
+d <- eggnog %>%
+  separate_longer_delim(ko, delim = ",") %>%
+  mutate(osm = case_when(
+    ko == "K05847" ~ "K05847: Osmoprotectant transport system",
+    ko == "K02000" ~ "K02000: Glycine betaine/proline transport system ATP binding",
+    ko == "K05846" ~ "K05846: Osmoprotectant",
+    ko == "K02001" ~ "K02001: Glycine betaine/proline transport system",
+    ko == "K02002" ~ "K02002: Glycine betaine/proline transport system",
+    ko == "K05020" ~ "K05020: Glycine betaine transporter",
+    ko == "K05845" ~ "K05845: Osmoprotectant transport system",
+    ko == "K03307" ~ "K03307: Osmoregulated proline transporter",
+    ko == "K03313" ~ "K03313: Osmoregulation: Na+ H+ antiporter",
+    ko == "K03316" ~ "K03316: Osmoregulation: Na+ H+ antiporter",
+    ko == "K05568" ~ "K05568: Osmoregulation: Na+ H+ antiporter",
+    ko == "K05565" ~ "K05847: Osmoregulation: Na+ H+ antiporter",
+    ko == "K05571" ~ "K05571: Osmoregulation: Na+ H+ antiporter",
+    ko == "K09476" ~ "K09476: Outer membrane pore protein",
+    ko == "K09475" ~ "K09475: Outer membrane pore protein",
+    ko == "K07638" ~ "K07638: Osmolarity sensor",
+    ko == "K07659" ~ "K07659: DNA-binding response regulator",
+    ko == "K01547" ~ "K01547: potassium-transporting ATPase",
+    ko == "K11928" ~ "K11928: Sodium/proline symporter"
+  )) %>%
+  filter(!is.na(osm)) %>%
+  inner_join(tax, by = "orf") %>%
+  inner_join(tpm, by = "orf") %>%
+  inner_join(meta, by = "sample") %>%
+  group_by(layer, order, osm) %>% summarise(tpm = sum(tpm), .groups = "drop") %>%
+  mutate(layer = factor(layer, c("10m", "chlMax"))) %>%
+  mutate(i = if_else(
+     layer == "10m", true = osm, paste(osm, layer)
+   ))
+```
+
+
+
+```{r}
+#| label: fig-osmoregulation
+#| fig-cap: KEGG orthologs involved in osmoregulation or the regulation of osmoregulation. Each bar shows the summed tpm (n = 10) for the depth layers. Showing the ten most relevant orders while grouping low-abundant lineages and transcripts without taxonomy as "Other". The x-axis was transformed with a square-root to also visualize KOs with a low tpm.
+
+cols.order <- c( # Sorted on abundance
+  "Pseudomonadales" = "#C7B19C",
+  "Pelagibacterales" = "#972D15",
+  "Flavobacteriales" = "#D8B70A",
+  "PS1" = "#FAEFD1",
+  "Nitrososphaerales" = "#A2A475",
+  "Marinisomatales" = "#79402E",
+  "HIMB59" = "#1B5331",
+  "SAR324" = "#046C9A",
+  "Puniceispirillales_A" = "#00A08A",
+  "Paceibacterales" = "#9986A5",
+  "Other" = "#D5D5D3"
+) %>% rev()
+
+ d %>%
+   mutate(order = if_else(is.na(order), "Other", order)) %>%
+   mutate(order = if_else(!order %in% names(cols.order), "Other", order)) %>%
+   ggplot(aes(
+    x = tpm, 
+    y = i,
+    fill = fct_relevel(order, names(cols.order))
+    )) +
+   geom_col(show.legend = TRUE) + 
+   scale_fill_manual(values = cols.order, drop = FALSE) +
+   scale_x_sqrt() +
+   scale_y_discrete(
+     labels = d %>%
+       arrange(i) %>%
+       select(i) %>%
+       distinct() %>%
+       mutate(i = if_else(grepl("chlMax", i), "", i)) %>%
+       pull(i) %>% rev()
+                  ) +
+   labs(x = "", y = "", fill = "") + 
+   theme_tidy(fontsize = 5) + guides(fill = guide_legend(reverse = TRUE)) +
+   theme(
+     axis.ticks.y = element_blank(),
+     legend.position = "inside",
+     legend.position.inside = c(0.85, 0.75),
+     legend.key.height = unit(3.5, "mm"),
+     aspect.ratio = 1.0
+   )
 ```
 
 

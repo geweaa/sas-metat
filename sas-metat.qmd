@@ -12,7 +12,7 @@ number_sections: true
 theme: sandstone
 mainfont: Helvetica
 monofont: AndaleMono
-fontsize: "9"
+fontsize: "8"
 highlight: textmate
 df_print: paged
 code-fold: true
@@ -28,8 +28,6 @@ other-links:
         href: https://nf-co.re/metatdenovo/1.0.1/
       - text: Nature guidelines on figures
         href: https://research-figure-guide.nature.com/figures/preparing-figures-our-specifications/
-      - text: The English Bookshop
-        href: https://bookshop.se
 ---
 
 # Load libraries
@@ -54,7 +52,7 @@ library(grateful)
 #| include: false
 
 source("../Protocols/theme.R")
-knitr::opts_chunk$set(cache = TRUE)
+knitr::opts_chunk$set(cache = FALSE)
 ```
 
 ```{r}
@@ -72,20 +70,62 @@ The raw data was procesesd using nf-core/metatdenovo (v1.0.1): https://nf-co.re/
 ```{r}
 #| label: metatdenovo-gtdb
 
-tax <- read_tsv("data/gtdb-tidy.tsv.gz", show_col_types = F)
+gtdb <- read_tsv("data/metatdenovo/user_assembly.prokka.gtdb-r220.diamond.taxonomy.tsv.gz", show_col_types = F) %>%
+  select(-strain,-taxonomy) %>%
+  filter(!is.na(phylum))
+
+# The GTDB metadata 'md' is to join the NCBI with the GTDB taxonomy
+pro <- read_tsv("data/metatdenovo/user_assembly.prokka.ncbi-refseq-20250115.diamond.taxonomy-taxdump.tsv.gz", show_col_types = F) %>%
+  filter(superkingdom %in% c("Bacteria", "Archaea")) %>%
+  select(orf, evalue, taxid) %>%
+  filter(!orf %in% gtdb$orf) 
+
+md <- read_tsv("./data/magmap/ar53_metadata_r226.tsv.gz", show_col_types = F)
+md <- read_tsv("./data/magmap/bac120_metadata_r226.tsv.gz", show_col_types = F) %>% rbind(md)
+
+pro <- md %>% 
+  filter(gtdb_representative) %>%
+  select(taxid = ncbi_taxid, gtdb_taxonomy) %>%
+  filter(taxid %in% pro$taxid) %>%
+  separate_wider_delim(gtdb_taxonomy, delim = ";", names = c("domain", "phylum", "class", "order", "family", "genus", "species")) %>%
+  mutate(species = NA) %>%
+  mutate(across(-1, \(x) gsub(x, pattern = "[a-z]__", replacement = ""))) %>%
+  mutate(genus = gsub("_[A-Z]", "", genus)) %>%
+  distinct() %>%
+  group_by(taxid) %>% slice_sample(n = 1) %>% ungroup() %>%
+  inner_join(pro, ., by = "taxid")
+
+euk <- read_tsv("data/metatdenovo/user_assembly.prokka.ncbi-refseq-20250115.diamond.taxonomy-taxdump.tsv.gz", show_col_types = F) %>%
+  filter(superkingdom == "Eukaryota" | superkingdom == "Viruses") %>%
+  select(-taxonomy) %>%
+  select(orf, taxid, evalue, domain = superkingdom, phylum, class, order, family, genus, species)
+
+# Identify ORFs that are identified as prokaryotes with GTDB but eukaryotes according to NCBI
+orfs <- gtdb %>%
+  select(orf, gtdb.evalue = evalue) %>%
+  inner_join(euk, by = "orf") %>%
+  filter(evalue > gtdb.evalue) %>%
+  pull(orf)
+
+# Merge into one object: 
+tax <- gtdb %>%
+  filter(!orf %in% orfs) %>%
+  rbind(pro) %>%
+  rbind(euk %>% filter(!orf %in% gtdb$orf))
 ```
 
 ```{r}
 #| label: metatdenovo-prokka
 
-tpm <- read_tsv("data/megahit.prokka.counts.tsv.gz", show_col_types = F) %>% 
+tpm <- read_tsv("data/metatdenovo/user_assembly.prokka.counts.tsv.gz", show_col_types = F) %>% 
   mutate(sample = gsub("R", ".", sample)) %>%
   mutate(sample = factor(sample, levels = c(
     "S1.1", "S1.2", "S2.1", "S2.2", "S3.1", "S3.2", "S4.1", "S4.2", "S5.1", "S6.1", 
     "S5.2", "S6.2", "S7.1", "S7.2", "S8.1", "S8.2", "S9.1", "S9.2", "S10.1", "S10.2"
-  )))
+  ))) %>%
+  select(-start, -end,- strand, -length, -chr)
 
-meta <- read_tsv("data/sample_key.tsv", show_col_types = FALSE) %>%
+meta <- read_tsv("data/ampliseq/sample_key.tsv", show_col_types = FALSE) %>%
   mutate(station = as.character(station)) %>%
   mutate(sample = gsub("R", ".", sample)) %>%
   mutate(sample = factor(sample, levels = c(
@@ -102,13 +142,14 @@ In total, there are `r nrow(meta)` metatranscriptomes from five stations. At eve
 ```{r read the functional annotations}
 #| label: read-eggnogmapper
 
-eggnog <- read_tsv("data/emapper-tidy.tsv.gz", show_col_types = F) %>%
+eggnog <- read_tsv("data/metatdenovo/user_assembly.prokka.emapper.tsv.gz", show_col_types = F) %>%
   mutate(kegg_ko = gsub("ko:", "", kegg_ko)) %>%
   filter(kegg_ko != "-") %>%
-  select(orf, evalue, cog = cog_category, ko = kegg_ko, module = kegg_module, name = preferred_name, description)
+  select(orf, evalue, cog = cog_category, ko = kegg_ko, module = kegg_module, name = preferred_name, description, max_annot_lvl)
 
-prokka <- read_tsv("data/prokka-tidy.tsv.gz", show_col_types = F) %>%
-    filter(product != "hypothetical protein")
+prokka <- read_tsv("data/metatdenovo/user_assembly.prokka.prokka-annotations.tsv.gz", show_col_types = F) %>%
+  filter(product != "hypothetical protein") %>%
+  select(orf, ec = ec_number, gene, name, product)
 ```
 
 # Read input files DNA
@@ -152,7 +193,7 @@ cols.phylum <- c( # Sorted on abundance
   "Chloroflexota" = "#D8B70A",
   "SAR324" = "#1B5331",
   "Other" = "#D5D5D3",
-  "Unidentified" = "#D5D5D3"
+  "Unidentified" = "#8D8680"
 )
 
 cols.order <- c( # Sorted on abundance
@@ -164,6 +205,9 @@ cols.order <- c( # Sorted on abundance
   "Nitrososphaerales" = "#A2A475",
   "Enterobacterales" = "#00A08A",
   "SAR86" = "#1B5331",
+  "Rhodobacterales" = "#9986A5",
+  "Marinisomatales" = "#79402E",
+  "Puniceispirillales_A" = "#046C9A",
   "Other" = "#D5D5D3"
 )
 
@@ -242,6 +286,7 @@ rare %>%
 
 ```{r}
 #| label: Percentage of transcripts with a taxonomic annotation
+#| tbl-cap: Percentage of transcripts with a taxonomic annotation
 
 i <- c("domain","phylum","class","order","family","genus")
 
@@ -254,6 +299,7 @@ for (level in i) {
 
 ```{r}
 #| label: Percentage of transcripts with a taxonomic and functional annotation (KO)
+#| tbl-cap: Percentage of transcripts with a taxonomic and a functional annotation
 
 i <- c("domain","phylum","class","order","family","genus")
 
@@ -267,6 +313,18 @@ for (level in i) {
 
 ## Community composition on domain level
 
+```{r}
+#| label: tbl-domain
+
+tpm %>%
+  left_join(tax, by = "orf") %>%
+  replace_na(list("domain" = "Unknown")) %>%
+  group_by(domain) %>% summarise(tpm = sum(tpm) / 20, .groups = "drop") %>%
+  arrange(desc(tpm))
+```
+
+
+
 @fig-domain depicts the ratio between bacteria and archaea for both depth layers. Note how the abundance of archaea is slightly higher in most of the deeper samples (chlorophyll max depth).
 
 ```{r}
@@ -279,37 +337,51 @@ tpm %>%
   inner_join(tax, by = "orf") %>%
   inner_join(meta, by = "sample") %>%
   group_by(sample, domain) %>% summarise(tpm = sum(tpm), .groups = "drop") %>%
-  filter(domain %in% c("Bacteria", "Archaea")) %>%
+  mutate(domain = factor(domain, levels = c("Viruses", "Eukaryota", "Archaea", "Bacteria"))) %>%
   ggplot(aes(
     x = sample,
     y = tpm,
     fill = domain
   )) +
   geom_col() + theme_tidy() +
-  scale_y_continuous(breaks = c(0, 2e5, 4e5), labels = c(0, 2, 4)) +
-  labs(y = expression('Relative abundance (tpm '%*% '10'^'5'*')')) + 
-  scale_fill_manual(values = c("Bacteria" = "#C7B19C", "Archaea" = "#A2A475")) +
-  guides(fill = guide_legend(reverse = TRUE)) +
+  scale_y_continuous(breaks = c(0, 2e5, 4e5, 6e5), labels = c(0, 0.2, 0.4, 0.6)) +
+  labs(y = expression('Relative abundance (tpm '%*% '10'^'6'*')')) + 
+  scale_fill_manual(
+    values = c("Bacteria" = "#C7B19C", "Archaea" = "#A2A475", "Viruses" = "#D8B70A", "Eukaryota" = "#FAEFD1")
+    ) +
   theme(
-    aspect.ratio = 0.7,
+    aspect.ratio = 0.5,
     legend.title = element_blank(),
     axis.title.x = element_blank(),
     axis.ticks.x = element_blank(),
     axis.text.x = element_blank()
   ) +
-  annotate("segment", x =  0.55, xend =  10.45, y = -15000, yend = -15000) +
-  annotate("segment", x =  10.55, xend = 20.45, y = -15000, yend = -15000) +
-  annotate("label", x = 5, y = -17000, label = "10 m", label.size = 0, size = 6/.pt) +
-  annotate("label", x = 15, y = -17000, label = "Chl. max", label.size = 0, size = 6/.pt)
+  annotate("segment", x =  0.55, xend =  2.45, y = -30000, yend = -30000, color = "#78B7C5") +
+  annotate("segment", x =  2.55, xend =  4.45, y = -30000, yend = -30000, color = "#046C9A") +
+  annotate("segment", x =  4.55, xend =  6.45, y = -30000, yend = -30000, color = "#78B7C5") +
+  annotate("segment", x =  6.55, xend =  8.45, y = -30000, yend = -30000, color = "#046C9A") +
+  annotate("segment", x =  8.55, xend = 10.45, y = -30000, yend = -30000, color = "#78B7C5") +
+  annotate("segment", x = 10.55, xend = 12.45, y = -30000, yend = -30000, color = "#046C9A") +
+  annotate("segment", x = 12.55, xend = 14.45, y = -30000, yend = -30000, color = "#78B7C5") +
+  annotate("segment", x = 14.55, xend = 16.45, y = -30000, yend = -30000, color = "#046C9A") +
+  annotate("segment", x = 16.55, xend = 18.45, y = -30000, yend = -30000, color = "#78B7C5") +
+  annotate("segment", x = 18.55, xend = 20.45, y = -30000, yend = -30000, color = "#046C9A") +
+  annotate("label", x = 2.5, y = -30000, label = "5", label.size = 0, size = 6/.pt) +
+  annotate("label", x = 6.5, y = -30000, label = "26", label.size = 0, size = 6/.pt) +
+  annotate("label", x =10.5, y = -30000, label = "42", label.size = 0, size = 6/.pt) +
+  annotate("label", x =14.5, y = -30000, label = "53", label.size = 0, size = 6/.pt) +
+  annotate("label", x =18.5, y = -30000, label = "56", label.size = 0, size = 6/.pt)
 ```
 
 # Community composition
+
+## Community composition - phylum
 
 ```{r most abundant phyla for plotting}
 #| tbl-cap: The eight most abundant phyla of all samples, based on summed TPM. Most are bacterial phyla, except for the archaeal phyla Thermoproteota and Thermoplasmatota. 
 
 t <- tpm %>%
-  inner_join(tax, by = "orf") %>%
+  inner_join(gtdb, by = "orf") %>%
   group_by(phylum, sample) %>%
   # Sum the abundance of each phylum within a sample
   summarise(tpm = sum(tpm), .groups = 'drop_last') %>%
@@ -318,17 +390,30 @@ t <- tpm %>%
   filter(!is.na(phylum)) %>%
   top_n(8, mean.tpm)
 
-t %>% arrange(desc(mean.tpm)) %>% knitr::kable()
+t %>% arrange(desc(mean.tpm))
 ```
 
 
 ```{r prepare the taxonomy, include=FALSE}
+cols.phylum <- c( # Sorted on abundance
+  "Pseudomonadota" = "#C7B19C",
+  "Thermoplasmatota" = "#972D15",
+  "Bacteroidota" = "#FAEFD1",
+  "Cyanobacteriota" = "#D69C4E",
+  "Thermoproteota" = "#A2A475",
+  "Marinisomatota" = "#00A08A",
+  "Chloroflexota" = "#D8B70A",
+  "SAR324" = "#1B5331",
+  "Other" = "#D5D5D3",
+  "Eukaryotes" = "#046C9A",
+  "Unidentified" = "#8D8680"
+)
+
 taxref <- tax %>%
   left_join(t %>% transmute(phylum, topphylum = phylum), by = "phylum") %>%
   replace_na(list("topphylum" = "Other"))
 ```
 
-## Community composition - phylum
 
 @fig-phylum explores the data by plotting the most abundant phyla over all samples, regardless if the RNA transcript was functionally annotated or not. Note that the taxonomy is outdated and needs to be updated (e.g. Pseudomonadota instead of Proteobacteria). 87.7 % of the annotated ORFs are affiliated with bacteria, while 13.1 % is affiliated with Archaea.
 
@@ -339,6 +424,7 @@ taxref <- tax %>%
 
 tpm %>%
   left_join(taxref, by = "orf") %>%
+  mutate(topphylum = if_else(domain == "Eukaryota", "Eukaryotes", topphylum)) %>%
   replace_na(list("topphylum" = "Unidentified")) %>%
   # Summarize in order to have the sum for each category and topphylum
   group_by(sample, topphylum) %>% 
@@ -349,7 +435,7 @@ tpm %>%
              fill = fct_relevel(topphylum, names(cols.phylum) %>% rev())
              )
          ) +
-  labs(x = '', y = expression('Relative abundance (tpm '%*% '10'^'6'*')'), fill = "Phylum") +
+  labs(x = '', y = expression('Relative abundance (tpm '%*% '10'^'6'*')'), fill = "") +
   geom_col() +
   scale_y_continuous(breaks = c(0, 2e5, 4e5, 6e5, 8e5, 1e6),
                 labels = c("0.0", "0.2", "0.4", "0.6", "0.8", "1.0")
@@ -364,53 +450,62 @@ tpm %>%
     panel.border = element_rect(fill = "transparent", linewidth = 0.5),
     axis.text.x = element_blank()
     ) +
-  annotate("segment", x =  0.55, xend =  4.45, y = -25000, yend = -25000) +
-  annotate("segment", x =  4.55, xend =  8.45, y = -25000, yend = -25000) +
-  annotate("segment", x =  8.55, xend = 12.45, y = -25000, yend = -25000) +
-  annotate("segment", x = 12.55, xend = 16.45, y = -25000, yend = -25000) +
-  annotate("segment", x = 16.55, xend = 20.45, y = -25000, yend = -25000) +
-  annotate("label", x = 2.5, y = -25000, label = "Station 5", label.size = 0, size = 6/.pt) +
-  annotate("label", x = 6.5, y = -25000, label = "26", label.size = 0, size = 6/.pt) +
-  annotate("label", x =10.5, y = -25000, label = "42", label.size = 0, size = 6/.pt) +
-  annotate("label", x =14.5, y = -25000, label = "53", label.size = 0, size = 6/.pt) +
-  annotate("label", x =18.5, y = -25000, label = "56", label.size = 0, size = 6/.pt)
+  annotate("segment", x =  0.55, xend =  2.45, y = -30000, yend = -30000, color = "#78B7C5") +
+  annotate("segment", x =  2.55, xend =  4.45, y = -30000, yend = -30000, color = "#046C9A") +
+  annotate("segment", x =  4.55, xend =  6.45, y = -30000, yend = -30000, color = "#78B7C5") +
+  annotate("segment", x =  6.55, xend =  8.45, y = -30000, yend = -30000, color = "#046C9A") +
+  annotate("segment", x =  8.55, xend = 10.45, y = -30000, yend = -30000, color = "#78B7C5") +
+  annotate("segment", x = 10.55, xend = 12.45, y = -30000, yend = -30000, color = "#046C9A") +
+  annotate("segment", x = 12.55, xend = 14.45, y = -30000, yend = -30000, color = "#78B7C5") +
+  annotate("segment", x = 14.55, xend = 16.45, y = -30000, yend = -30000, color = "#046C9A") +
+  annotate("segment", x = 16.55, xend = 18.45, y = -30000, yend = -30000, color = "#78B7C5") +
+  annotate("segment", x = 18.55, xend = 20.45, y = -30000, yend = -30000, color = "#046C9A") +
+  annotate("label", x = 2.5, y = -30000, label = "5", label.size = 0, size = 6/.pt) +
+  annotate("label", x = 6.5, y = -30000, label = "26", label.size = 0, size = 6/.pt) +
+  annotate("label", x =10.5, y = -30000, label = "42", label.size = 0, size = 6/.pt) +
+  annotate("label", x =14.5, y = -30000, label = "53", label.size = 0, size = 6/.pt) +
+  annotate("label", x =18.5, y = -30000, label = "56", label.size = 0, size = 6/.pt)
 ```
+
+```{r}
+ggsave(filename = "figures/metatdenovo-phylum.pdf", width = 180, height = 120, units = "mm")
+```
+
 
 ## Community composition - order
 
 ```{r most abundant orders for plotting}
 #| tbl-cap: The eight most abundant orders, after summing the TPM of all the samples.
 
-cols.order <- c( # Sorted on abundance
-  "Poseidoniales" = "#D69C4E",
-  "Pseudomonadales" = "#C7B19C",
-  "Pelagibacterales" = "#972D15",
-  "Flavobacteriales" = "#D8B70A",
-  "PS1" = "#FAEFD1",
-  "Nitrososphaerales" = "#A2A475",
-  "Enterobacterales" = "#00A08A",
-  "SAR86" = "#1B5331",
-  "Rhodobacterales" = "#9986A5",
-  "Marinisomatales" = "#79402E",
-  "Puniceispirillales_A" = "#046C9A",
-  "Other" = "#D5D5D3"
-)
-
 t <- tpm %>%
-  inner_join(tax, by = "orf") %>%
+  inner_join(tax, by = "orf") %>% filter(domain %in% c("Bacteria", "Archaea")) %>%
   group_by(order, sample) %>%
   # Sum the abundance of each phylum within a sample
   summarise(tpm = sum(tpm), .groups = 'drop_last') %>%
   # Calculate the mean abundance of each phylum over the categories
   summarise(mean.tpm = sum(tpm), .groups = 'drop') %>%
   filter(!is.na(order)) %>%
-  top_n(11, mean.tpm)
+  top_n(10, mean.tpm)
 
-t %>% arrange(desc(mean.tpm)) %>% knitr::kable()
+t %>% arrange(desc(mean.tpm))
 ```
 
 
 ```{r prepare the taxonomy - order, include=FALSE}
+cols.order <- c( # Sorted on abundance
+  "Pseudomonadales" = "#C7B19C",
+  "Poseidoniales" = "#D69C4E",
+  "Pelagibacterales" = "#972D15",
+  "PS1" = "#FAEFD1",
+  "Flavobacteriales" = "#D8B70A",
+  "Nitrososphaerales" = "#A2A475",
+  "Enterobacterales" = "#00A08A",
+  "SAR86" = "#1B5331",
+  "Rhodobacterales" = "#9986A5",
+  "Marinisomatales" = "#046C9A",
+  "Other" = "#D5D5D3"
+)
+
 taxref <- tax %>%
   left_join(t %>% transmute(order, topphylum = order), by = "order") %>%
   replace_na(list("topphylum" = "Other"))
@@ -444,7 +539,7 @@ p1 <- tpm %>%
   theme_tidy(legend = "bottom") +
   guides(fill = guide_legend(nrow = 3, reverse = TRUE)) +
   theme(
-    aspect.ratio = 0.5,
+    aspect.ratio = 0.75,
     axis.ticks.x = element_blank(),
     legend.key.height = unit(3.5, "mm"),
     legend.margin = margin(t = -10),
@@ -478,14 +573,14 @@ p1
 #| tbl-cap: Twenty most abundant genera over all samples, based on tpm. The order and phylum of the respective genera are also displayed.  
 
 t <- tpm %>%
-  inner_join(tax, by = "orf") %>%
+  inner_join(tax, by = "orf") %>% filter(domain %in% c("Bacteria", "Archaea")) %>%
   group_by(genus, sample) %>%
   # Sum the abundance of each phylum within a sample
   summarise(tpm = sum(tpm), .groups = 'drop_last') %>%
   # Calculate the mean abundance of each phylum over the categories
   summarise(mean.tpm = sum(tpm), .groups = 'drop') %>%
   filter(!is.na(genus)) %>%
-  top_n(20, mean.tpm)
+  top_n(10, mean.tpm)
 
 t %>% left_join(tax, by = "genus") %>% 
   select(genus, order, phylum, mean.tpm) %>% 
@@ -496,15 +591,18 @@ t %>% left_join(tax, by = "genus") %>%
 ```
 
 ```{r, include=FALSE}
-t <- tpm %>%
-  inner_join(tax, by = "orf") %>%
-  group_by(genus, sample) %>%
-  # Sum the abundance of each phylum within a sample
-  summarise(tpm = sum(tpm), .groups = 'drop_last') %>%
-  # Calculate the mean abundance of each phylum over the categories
-  summarise(mean.tpm = sum(tpm), .groups = 'drop') %>%
-  filter(!is.na(genus)) %>%
-  top_n(10, mean.tpm) %>% pull(genus)
+cols.genus <- c( # Sorted on abundance
+  "MGIIb-O3" = "#C7B19C",
+  "Pseudothioglobus" = "#A2A475",
+  "Pelagibacter" = "#972D15",
+  "Nitrosopumilus" = "#1B5331",
+  "HTCC2207" = "#FAEFD1",
+  "UBA9145" = "#D69C4E",
+  "Lutibacter" = "#00A08A",
+  "Photorhabdus" = "#D8B70A",
+  "ASP10-02a" = "#046C9A",
+  "Arctic96AD-7" = "#D5D5D3"
+)
 ```
 
 @fig-genus shows the most abundant genera. It reveals how some genera (e.g. Pelagibacter and Ketobacter) are more abundant (and active) in the 10 m depth, while for example Nitrosopumilus is more abundant in the deeper sites. Note from the metadata that the depth of chlorophyll max strongly varies between the stations.
@@ -515,8 +613,8 @@ t <- tpm %>%
 #| out-width: 100%
 
 
-p.genus <- tpm %>%
-  left_join(tax, by = "orf") %>% filter(genus %in% t) %>%
+tpm %>%
+  left_join(tax, by = "orf") %>% filter(genus %in% t$genus) %>%
   # Summarize in order to have the sum for each category and topphylum
   group_by(sample, genus) %>% 
   summarise(tpm = sum(tpm), .groups = 'drop') %>%
@@ -557,8 +655,6 @@ p.genus <- tpm %>%
   annotate("label", x =10.5, y = -10000, label = "42", label.size = 0, size = 6/.pt) +
   annotate("label", x =14.5, y = -10000, label = "53", label.size = 0, size = 6/.pt) +
   annotate("label", x =18.5, y = -10000, label = "56", label.size = 0, size = 6/.pt)
-
-p.genus
 ```
 
 ## Redundancy analysis (RDA)
@@ -619,7 +715,7 @@ vegan::RsquareAdj(rda)
 ```
 
 ```{r}
-p.rda <- rda$CCA$wa %>% data.frame() %>% tibble::rownames_to_column('sample') %>%
+p2 <- rda$CCA$wa %>% data.frame() %>% tibble::rownames_to_column('sample') %>%
   inner_join(hydro, by = 'sample') %>%
   ggplot(aes(x = RDA1, y = RDA2)) +
   geom_vline(xintercept = 0, colour = "grey", linetype = "dotted") +
@@ -651,13 +747,13 @@ p.rda <- rda$CCA$wa %>% data.frame() %>% tibble::rownames_to_column('sample') %>
     aspect.ratio = 1.0
     )
 
-p.rda
+p2
 ```
 
 ```{r}
 #| label: fig-nmdstax
 
-p1 + p.rda + plot_annotation(tag_levels = c("a", "b")) & theme(
+p1 + p2 + plot_annotation(tag_levels = c("a", "b")) & theme(
   plot.margin = margin(r = 4),
   plot.tag.location = "panel",
   plot.tag.position = c(0.03, 0.97),
@@ -682,6 +778,7 @@ i <- eggnog %>% inner_join(cogs, by = "cog") %>%
   group_by(cat) %>% summarise(tpm = sum(tpm), .groups = "drop") %>% arrange(desc(tpm)) %>% pull(cat)
 ```
 
+
 ```{r, fig.width=18/2.53}
 #| fig-cap: The abundance (in tpm) of COG categories summed for each depth layer.
 #| label: fig-cog
@@ -690,6 +787,7 @@ eggnog %>% inner_join(cogs, by = "cog") %>%
   inner_join(tpm, by = "orf") %>%
   inner_join(meta, by = "sample") %>% filter(station != "5") %>%
   group_by(layer, cat) %>% summarise(tpm = sum(tpm), .groups = "drop") %>%
+  mutate(layer = factor(layer, levels = c("chlMax","10m"))) %>%
   # Plot
   ggplot(aes(
     x = tpm,
@@ -705,7 +803,7 @@ eggnog %>% inner_join(cogs, by = "cog") %>%
   scale_x_continuous(breaks = c(0, 2e5, 4e5, 6e5), labels = c(
     "0", 
     expression("2" %*% "10"^5), expression("4" %*% "10"^5), expression("6" %*% "10"^5)
-    )) + xlab("Relative abundance (tpm)") +
+    )) + xlab("Relative abundance (tpm)") + guides(fill = guide_legend(reverse = T)) +
   theme(
     axis.title.y = element_blank(),
     axis.ticks.y = element_blank(),
@@ -725,7 +823,7 @@ eggnog %>% inner_join(cogs, by = "cog") %>%
 eggnog %>%
   inner_join(tpm, by = "orf") %>%
   group_by(ko, description) %>% summarise(tpm = sum(tpm), .groups = "drop") %>%
-  slice_max(tpm, n = 500) %>%
+  slice_max(tpm, n = 50) %>%
   knitr::kable(digits = 0, format = "simple")
 ```
 
@@ -747,161 +845,90 @@ genelist <- read_tsv("data/genelist.txt", show_col_types = FALSE) %>%
 ```
 
 ```{r}
-cols.order <- c( # Sorted on abundance
-  "Poseidoniales" = "#D69C4E",
-  "Pseudomonadales" = "#C7B19C",
-  "Pelagibacterales" = "#972D15",
-  "Flavobacteriales" = "#D8B70A",
-  "PS1" = "#FAEFD1",
-  "Nitrososphaerales" = "#A2A475",
-  "Enterobacterales" = "#00A08A",
-  "SAR86" = "#1B5331",
-  "Rhodobacterales" = "#9986A5",
-  "Marinisomatales" = "#79402E",
-  "Puniceispirillales_A" = "#046C9A",
-  "Other" = "#D5D5D3"
-)
-
-cols.order <- c( # Sorted on abundance
-  "Pseudomonadales" = "#C7B19C",
-  "Pelagibacterales" = "#972D15",
-  "Flavobacteriales" = "#D8B70A",
-  "PS1" = "#FAEFD1",
-  "Nitrososphaerales" = "#A2A475",
-  "Marinisomatales" = "#79402E",
-  "SAR86" = "#1B5331",
-  "SAR324" = "#046C9A",
-  "UBA2979" = "#00A08A",
-  "Cyanobacteriota" = "#D69C4E",
-  "UBA1151" = "#9986A5",
-  "Other" = "#D5D5D3"
-) %>% rev()
-
- kos <- eggnog %>% 
+kos <- eggnog %>% 
+  separate_longer_delim(ko, delim = ",") %>%  
   mutate(pathway = case_when(
     # C fixation
-    ko == "K01601" ~ "Calvin cycle", # ribulose-bisphosphate carboxylase large chain - EC:4.1.1.39 - Calvin cycle
-    ko == "K09709" ~ "3-hydroxypropionate bi-cycle", # 3-methylfumaryl-CoA hydratase - EC:4.2.1.153 - 3-hydroxypropionate bi-cycle
-    ko == "K15019" ~ "HP/HB cycle", # 3-hydroxypropionyl-coenzyme A dehydratase - EC:4.2.1.116 - HP/HB cycle
-    ko == "K00175" ~ "Reverse TCA cycle", # 2-oxoglutarate/2-oxoacid ferredoxin oxidoreductase subunit beta - EC:1.2.7.3 1.2.7.11 - Reverse TCA cycle
-    ko == "K14534" ~ "DC/HB cycle", # 4-hydroxybutyryl-CoA dehydratase / vinylacetyl-CoA-Delta-isomerase - EC:4.2.1.120 5.3.3.3 - DC/HB cycle
-    ko == "K00198" ~ "Wood-Ljungdahl pathway",  # anaerobic carbon-monoxide dehydrogenase catalytic subunit - EC:1.2.7.4 - Wood-Ljungdahl
+    ko == "K01601" ~ "Calvin cycle: C fixation", # ribulose-bisphosphate carboxylase large chain - EC:4.1.1.39 - Calvin cycle
+    ko == "K01602" ~ "Calvin cycle: C fixation", # ribulose-bisphosphate carboxylase small chain - EC:4.1.1.39 - Calvin cycle
+    ko == "K01965" ~ "3-hydroxypropionate bi-cycle: C fixation", # biotin dependent acetyl CoA propionyl-CoA carboxylase
+    ko == "K01966" ~ "3-hydroxypropionate bi-cycle: C fixation", # biotin dependent acetyl CoA propionyl-CoA carboxylase
+    ko == "K00175" ~ "Reverse TCA cycle: C fixation", # 2-oxoglutarate/2-oxoacid ferredoxin oxidoreductase subunit beta - EC:1.2.7.3 1.2.7.11 - Reverse TCA cycle
+    ko == "K15230" ~ "Reverse TCA cycle: C fixation", 
+    ko == "K15231" ~ "Reverse TCA cycle: C fixation", 
+    ko == "K15019" ~ "HP/HB cycle: C fixation", # 3-hydroxypropionyl-coenzyme A dehydratase - EC:4.2.1.116 - HP/HB cycle
+    ko == "K14534" ~ "DC/HB cycle: C fixation", # 4-hydroxybutyryl-CoA dehydratase / vinylacetyl-CoA-Delta-isomerase - EC:4.2.1.120 5.3.3.3 - DC/HB cycle
+    ko == "K00198" ~ "Wood-Ljungdahl pathway: C fixation",  # anaerobic carbon-monoxide dehydrogenase catalytic subunit - EC:1.2.7.4 - Wood-Ljungdahl
     # N metabolism
-    ko %in% c("K00368","K15864","K04561","K02305","K00376","K15877") ~ "Denitrification",
-    ko %in% c("K10535","PF01774","PF00449","K00370") ~ "Nitrification",
-    ko %in% c("K17877","K00366","K10534","K00367","K00360","K00372") ~ "Assimilatory nitrate reduction",
-    ko %in% c("K00362","K00363","K03385","K15876") ~ "Dissimilatory nitrite reduction",
-    ko %in% c("K10944","K10945","K10946") ~ "Ammonia monooxygenase (AmoABC)",
-    ko == "K03320" ~ "Ammonium transporter (amt)",
-    ko %in% c("K02586","K02588","K02591") ~ "Nitrogen fixation (nifDHK)",
+    ko %in% c("K00368","K15864","K04561","K02305","K00376","K15877") ~ "Denitrification: N metabolism",
+    ko %in% c("K10535","PF01774","PF00449","K00370") ~ "Nitrification: N metabolism",
+    ko %in% c("K17877","K00366","K10534","K00367","K00360","K00372") ~ "Assimilatory nitrate reduction: N metabolism",
+    ko %in% c("K00362","K00363","K03385","K15876") ~ "Dissimilatory nitrite reduction: N metabolism",
+    ko %in% c("K10944","K10945","K10946") ~ "Ammonia monooxygenase (AmoABC): N metabolism",
+    ko == "K03320" ~ "Ammonium transporter (amt): N metabolism",
+    ko %in% c("K02586","K02588","K02591") ~ "Nitrogen fixation (nifDHK): N metabolism",
     # Central C
-    ko == "K01637" ~ "Glyoxylate cycle: ICL",
-    ko == "K13937" ~ "Pentose phosphate pathway: G6PD",
-    ko == "K00850" ~ "Glycolysis: PFK",
-    ko == "K01690" ~ "ED pathway: edd",
-    ko == "K00031" ~ "Citric acid cycle: icd",
-    ko == "K18981" ~ "Uronate pathway: udh",
-    ko == "K00948" ~ "PRPP biosynthesis: RPPK",    
+    ko == "K01637" ~ "Glyoxylate cycle (ICL): Central C metabolism",
+    ko == "K13937" ~ "Pentose phosphate pathway (G6PD): Central C metabolism",
+    ko == "K00850" ~ "Glycolysis (PFK): Central C metabolism",
+    ko == "K01690" ~ "ED pathway (edd): Central C metabolism",
+    ko == "K00031" ~ "Citric acid cycle (icd): Central C metabolism",
+    ko == "K18981" ~ "Uronate pathway (udh): Central C metabolism",
+    ko == "K00948" ~ "PRPP biosynthesis (RPPK): Central C metabolism",    
     # Photosystems
-    ko == "K02712" ~ "Photosystem II (psbK)",
-    ko == "K02707" ~ "Photosystem II (psbE)",
-    ko == "K02697" ~ "Photosystem I (psaJ)",
-    ko == "K02274" ~ "Cytochrome c oxidase (coxA)",
-    ko == "K02256" ~ "Cytochrome c oxidase (Cox1)",
+    ko == "K02703" ~ "Photosystem II (psbA): Photosystems and ATP",
+    ko == "K02712" ~ "Photosystem II (psbK): Photosystems and ATP",
+    ko == "K02707" ~ "Photosystem II (psbE): Photosystems and ATP",
+    ko == "K02697" ~ "Photosystem I (psaJ): Photosystems and ATP",
+    ko == "K02274" ~ "Cytochrome c oxidase (coxA): Photosystems and ATP",
+    ko == "K02256" ~ "Cytochrome c oxidase (Cox1): Photosystems and ATP",
+    # S metabolism
+    ko %in% c("K00955", "K00956", "K00957", "K00958") ~ "Sulfate adenylyltransferase (sat): S metabolism",
+    ko %in% c("K00394", "K00395") ~ "Adenylylsulfate reductase (aprAB): S metabolism", # Dissimilatory sulfate red.
+    ko %in% c("K16950", "K16951", "K00385") ~ "Anaerobic sulfite reductase: S metabolism", # Dissimilatory sulfate red.
+    ko %in% c("K21307", "K21308", "K21309") ~ "Sulfite dehydrogenase (quinone): S metabolism", 
+    ko %in% c("K17222","K17223","K17224","K17225","K17226","K17227") ~ "Sulfur oxidation (soxAXBCYZ): S metabolism",
     .default = NA
   )) %>% filter(!is.na(pathway)) %>%
-  mutate(metabolism = case_when(
-    ko %in% c("K01601","K09709","K15019","K00175","K14534","K00198") ~ "cfix",
-    ko %in% c("K01637","K13937","K00850","K01690","K00031","K18981","K00948") ~ "c",
-    ko %in% c("K02712","K02707","K02697","K02274","K02256") ~ "photo",
-    .default = "n"
-  )) %>%
-  inner_join(tax, by = "orf") %>% inner_join(tpm, by = "orf", relationship = "many-to-many") %>%
-  mutate(order = if_else(phylum == "Cyanobacteria", true = "Cyanobacteria", false = order)) %>%
+  separate_wider_delim(pathway, delim = ": ", names = c("pathway", "metabolism")) %>%
+  left_join(tax, by = "orf") %>%
+  replace_na(list("domain" = "Bacteria", "order" = "Unidentified", "phylum" = "Unidentified")) %>%
+  filter(domain %in% c("Bacteria", "Archaea")) %>%
+  inner_join(tpm, by = "orf", relationship = "many-to-many") %>%
+  #mutate(order = if_else(phylum == "Cyanobacteriota", true = "Cyanobacteriota", false = order)) %>%
   inner_join(meta, by = "sample") %>%
-  group_by(pathway, metabolism, layer, phylum) %>% summarise(tpm = sum(tpm), .groups = "drop")
-
- 
-   #mutate(order = if_else(order %in% names(cols.order), order, "Other")) %>%
-
-   #mutate(order = factor(order, levels = names(cols.order)))
-```
-
-```{r}
-# No nitrogen fixation detected so a very small value is assigned to show this
-i <- list(
-  pathway = c("Nitrogen fixation", "Nitrogen fixation"),
-  metabolism = c("N metabolism", "N metabolism"),
-  layer = c("10m", "chlMax"),
-  order = c("Cyanobacteriota", "Cyanobacteriota"),
-  tpm = c(0.01, 0.01)
-)
-
- kos <- eggnog %>%
-  separate_longer_delim(module, delim = ",") %>%
-  separate_longer_delim(ko, delim = ",") %>%
-  mutate(pathway = case_when(
-    # C fixation (seven modules)
-    module == "M00165" ~ "Calvin cycle", # ribulose-bisphosphate carboxylase large chain - EC:4.1.1.39 - Calvin cycle
-    module == "M00376" ~ "3-hydroxypropionate bi-cycle", # 3-methylfumaryl-CoA hydratase - EC:4.2.1.153 - 3-hydroxypropionate bi-cycle
-    module == "M00375" ~ "HP/HB cycle", # 3-hydroxypropionyl-coenzyme A dehydratase - EC:4.2.1.116 - HP/HB cycle
-    module == "M00173" ~ "Reverse TCA cycle", # 2-oxoglutarate/2-oxoacid ferredoxin oxidoreductase subunit beta - EC:1.2.7.3 1.2.7.11 - Reverse TCA cycle
-    module == "M00374" ~ "DC/HB cycle", # 4-hydroxybutyryl-CoA dehydratase / vinylacetyl-CoA-Delta-isomerase - EC:4.2.1.120 5.3.3.3 - DC/HB cycle
-    module == "M00377" ~ "Wood-Ljungdahl pathway",  # anaerobic carbon-monoxide dehydrogenase catalytic subunit - EC:1.2.7.4 - Wood-Ljungdahl
-    #module == "M00579" ~ "Phosphate acetyltransferase-acetate kinase pathway",
-    # N metabolism (seven modules)
-    module == "M00529" ~ "Denitrification",
-    module == "M00528" ~ "Nitrification",
-    module == "M00531" ~ "Assimilatory nitrate reduction",
-    module == "M00530" ~ "Dissimilatory nitrite reduction",
-    ko %in% c("K10944","K10945","K10946") ~ "Ammonia monooxygenase (AmoABC)",
-    ko == "K03320" ~ "Ammonium transporter (amt)",
-    module == "M00175" ~ "Nitrogen fixation (nifDHK)",
-    # Central C (seven modules)
-    module == "M00012" ~ "Glyoxylate cycle",
-    module == "M00004" ~ "Pentose phosphate pathway",
-    module == "M00001" ~ "Glycolysis",
-    module == "M00008" ~ "ED pathway",
-    module == "M00009" ~ "Citric acid cycle",
-    module == "M00014" ~ "Uronate pathway",
-    module == "M00005" ~ "PRPP biosynthesis",    
-    # Photosystems
-    module == "M00161" ~ "Photosystem II",
-    module == "M00163" ~ "Photosystem I",
-    #module == "M00087" ~ "Beta-oxidation",
-    module == "M00144" ~ "NADH:quinone oxidoreductase",
-    module == "M00154" ~ "Cytochrome c oxidase",
-    module == "M00157" ~ "F-type ATPase",
-    ko == "K02712" ~ "Photosystem II",
-    ko == "K02713" ~ "Photosystem II",
-    ko == "K02707" ~ "Photosystem II",
-    ko == "K02697" ~ "Photosystem I",
-    .default = NA
-  )) %>% filter(!is.na(pathway)) %>%
-  mutate(metabolism = case_when(
-    module %in% c("M00165","M00376","M00375","M00173","M00374","M00377","M00579") ~ "Carbon fixation",
-    module %in% c("M00012","M00004","M00001","M00008","M00009","M00014","M00005") ~ "Central C metabolism",
-    module %in% c("M00161","M00163","M00087","M00144","M00154","M00157") ~ "Photosystems and ATP",
-    ko %in% c("K02712", "K02713", "K02707", "K02697") ~ "Photosystems and ATP ",
-    .default = "N metabolism"
-  )) %>%
-   inner_join(tax, by = "orf") %>% inner_join(tpm, by = "orf", relationship = "many-to-many") %>%
-   mutate(order = if_else(phylum == "Cyanobacteriota", true = "Cyanobacteriota", false = order)) %>%
-   inner_join(meta, by = "sample") %>%
-   # Filter out transcripts without taxonomy
-   replace_na(list("order" = "Other")) %>%
-   mutate(order = if_else(order %in% names(cols.order), order, "Other")) %>%
-   group_by(pathway, metabolism, layer, order) %>% summarise(tpm = sum(tpm), .groups = "drop") %>%
-   # Assign a dummy value for nitrogen fixation
-   rbind(i) %>%
-   mutate(pathway = if_else(
+  group_by(pathway, metabolism, layer, order) %>% summarise(tpm = sum(tpm), .groups = "drop") %>%
+  mutate(order = if_else(order %in% names(cols.order), order, "Other")) %>%
+  mutate(order = factor(order, levels = names(cols.order))) %>%
+  mutate(pathway = if_else(
      layer == "10m", true = pathway, paste(pathway, layer)
    ))
 ```
 
 
+
 ```{r}
-p1 <- kos %>% filter(metabolism == "Carbon fixation") %>%
+cols.order <- c( # Sorted on abundance
+  "Nitrososphaerales" = "#A2A475",
+  "Cyanobacteriales" = "#D69C4E",
+  "Flavobacteriales" = "#D8B70A",
+  "Burkholderiales" = "#78B7C5",
+  "Pseudomonadales" = "#C7B19C",
+  "Chitinophagales" = "#00A08A",
+  "Rhodobacterales" = "#046C9A",
+  "Campylobacterales" = "#1B5331",
+  "Pelagibacterales" = "#972D15",
+  "PS1" = "#FAEFD1",
+  "Other" = "#D5D5D3",
+  "Unidentified" = "#8D8680"
+) %>% rev()
+```
+
+
+
+```{r}
+p1 <- kos %>% 
+  filter(metabolism == "C fixation") %>%
   ggplot(aes(
     x = tpm, 
     y = fct_rev(pathway),
@@ -910,7 +937,7 @@ p1 <- kos %>% filter(metabolism == "Carbon fixation") %>%
   geom_col(show.legend = TRUE) + 
   scale_fill_manual(values = cols.order, drop = FALSE) +
   scale_y_discrete(labels = kos %>% 
-                     filter(metabolism == "Carbon fixation") %>% 
+                     filter(metabolism == "C fixation") %>% 
                      select(pathway) %>% distinct() %>% 
                      mutate(pathway = if_else(grepl("chlMax", pathway), "", pathway)) %>%
                      pull(pathway) %>% rev()
@@ -923,7 +950,8 @@ p1
 
 
 ```{r}
-p2 <- kos %>% filter(metabolism == "Central C metabolism") %>%
+p2 <- kos %>% 
+  filter(metabolism == "Central C metabolism") %>%
   ggplot(aes(
     x = tpm, 
     y = fct_rev(pathway),
@@ -946,7 +974,8 @@ p2
 The genes listed below are typically catalyze the rate limiting step of the pathway. Like all other analysis, filtering is done based on the KOs and grouping of the KOs is avoided.
 
 ```{r}
-p3 <- kos %>% filter(metabolism == "N metabolism") %>%
+p3 <- kos %>% 
+  filter(metabolism == "N metabolism") %>%
   ggplot(aes(
     x = tpm, 
     y = fct_rev(pathway),
@@ -966,8 +995,10 @@ p3 <- kos %>% filter(metabolism == "N metabolism") %>%
 p3
 ```
 
+
 ```{r}
-p4 <- kos %>% filter(metabolism == "Photosystems and ATP") %>%
+p4 <- kos %>% 
+  filter(metabolism == "Photosystems and ATP") %>%
   ggplot(aes(
     x = tpm, 
     y = fct_rev(pathway),
@@ -982,10 +1013,59 @@ p4 <- kos %>% filter(metabolism == "Photosystems and ATP") %>%
                      pull(pathway) %>% rev()
                      ) +
   labs(x = "", y = "") + 
-  theme_tidy(fontsize = 5) 
+  theme_tidy(fontsize = 5)
 
 p4
 ```
+
+```{r}
+eggnog %>% 
+  separate_longer_delim(ko, delim = ",") %>%  
+  mutate(pathway = case_when(
+    # S metabolism
+    ko %in% c("K00955", "K00956", "K00957", "K00958") ~ "Sulfate adenylyltransferase (sat): S metabolism",
+    ko %in% c("K00394", "K00395") ~ "Adenylylsulfate reductase (aprAB): S metabolism", # Dissimilatory sulfate red.
+    ko %in% c("K16950", "K16951", "K00385") ~ "Anaerobic sulfite reductase: S metabolism", # Dissimilatory sulfate red.
+    ko %in% c("K21307", "K21308", "K21309") ~ "Sulfite dehydrogenase (quinone): S metabolism", 
+    ko %in% c("K17222","K17223","K17224","K17225","K17226","K17227") ~ "Sulfur oxidation (soxAXBCYZ): S metabolism",
+    .default = NA
+  )) %>% filter(!is.na(pathway)) %>%
+  separate_wider_delim(pathway, delim = ": ", names = c("pathway", "metabolism")) %>%
+  left_join(tax, by = "orf") %>%
+  replace_na(list("domain" = "Bacteria", "order" = "Unidentified", "phylum" = "Unidentified")) %>%
+  filter(domain %in% c("Bacteria", "Archaea")) %>%
+  inner_join(tpm, by = "orf", relationship = "many-to-many") %>%
+  inner_join(meta, by = "sample") %>%
+  group_by(pathway, metabolism, family) %>% summarise(tpm = sum(tpm), .groups = "drop") %>%
+  slice_max(tpm, n = 20)
+```
+
+
+
+
+```{r}
+p5 <- kos %>% 
+  filter(metabolism == "S metabolism") %>%
+  ggplot(aes(
+    x = tpm, 
+    y = fct_rev(pathway),
+    fill = fct_relevel(order, names(cols.order))
+    )) +
+  geom_col(show.legend = TRUE) + 
+  scale_fill_manual(values = cols.order, drop = FALSE) +
+  scale_y_discrete(labels = kos %>% 
+                     filter(metabolism == "S metabolism") %>% 
+                     select(pathway) %>% distinct() %>% 
+                     mutate(pathway = if_else(grepl("chlMax", pathway), "", pathway)) %>%
+                     pull(pathway) %>% rev()
+                     ) +
+  labs(x = "", y = "") + 
+  theme_tidy(fontsize = 5)
+
+p5
+```
+
+
 
 @fig-elements shows the tpm for each representative KO summed over all the samples (n = 20). N transformation, central C metabolism, and photosynthesis plus aerobic respiration. Udh uronate dehydrogenase, edd phosphogluconate dehydratase, icd isocitrate dehydrogenase, ICL isocitrate lyase, G6PD glucose-6-phosphate 1-dehydrogenase, PRPP phosphoribosyl pyrophosphate, RPPK ribose-phosphate pyrophosphokinase, ED: Entner–Doudoroff. Note how the transcripts involved in carbon fixation are predominantly represented by the Streptomycetales (Streptomyces sp.) and the Burkholderiales (Nitrosomonas sp.) while only few transcripts were detected affiliated with cyanobacteria. The oxidation from ammonia to nitrite (nitrification) is performed by Nitrosopumilus sp. while the further oxidation from nitrite to nitrate (K00370) is done by a representative from the family Nitrospinaceae.
 
@@ -993,8 +1073,8 @@ p4
 #| label: fig-elements
 #| fig-cap: KO plot
 
-(p1 + p2) / (p3 + p4) + 
-  plot_annotation(tag_levels = list(c('C fixation', 'Central C metabolism', 'N metabolism', 'Photosystems and ATP synthesis'))) + 
+(p1 + p2) / (p3 + p5) + 
+  plot_annotation(tag_levels = list(c('C fixation', 'Central C metabolism', 'N metabolism', 'S metabolism'))) + 
   plot_layout(guides = "collect") & guides(fill = guide_legend(reverse = TRUE)) &
   theme(
     legend.key.height = unit(3.5, "mm"), legend.key.width = unit(2.5, "mm"),
@@ -1008,7 +1088,7 @@ p4
 ```
 
 ```{r}
-ggsave("figures/ko-elements.pdf", width = 180, height = 120, units = "mm")
+ggsave("figures/ko-elements-modules.pdf", width = 180, height = 120, units = "mm")
 ```
 
 
@@ -1081,14 +1161,14 @@ kos %>%
 cols.order <- c( # Sorted on abundance
   "Pseudomonadales" = "#C7B19C",
   "Pelagibacterales" = "#972D15",
-  "Flavobacteriales" = "#D8B70A",
-  "PS1" = "#FAEFD1",
-  "Nitrososphaerales" = "#A2A475",
-  "Marinisomatales" = "#79402E",
+  "SAR324" = "#D69C4E",
   "Puniceispirillales_A" = "#1B5331",
-  "SAR324" = "#046C9A",
+  "Marinisomatales" = "#046C9A",
+  "PS1" = "#FAEFD1",
   "Enterobacterales" = "#00A08A",
-  "Rhodospirillales_A" = "#D69C4E"
+  "Rhodospirillales_A" = "#D5D5D3",
+  "Burkholderiales" = "#78B7C5",
+  "Nitrospinales" = "#A2A475"
 ) %>% rev()
 
 kos %>%
@@ -1161,20 +1241,18 @@ d <- eggnog %>%
 #| fig-cap: KEGG orthologs involved in osmoregulation or the regulation of osmoregulation. Each bar shows the summed tpm (n = 10) for the depth layers. Showing the ten most relevant orders while grouping low-abundant lineages and transcripts without taxonomy as "Other". The x-axis was transformed with a square-root to also visualize KOs with a low tpm.
 
 cols.order <- c( # Sorted on abundance
-  "Pseudomonadales" = "#C7B19C",
-  "Pelagibacterales" = "#972D15",
-  "Flavobacteriales" = "#D8B70A",
   "PS1" = "#FAEFD1",
-  "Nitrososphaerales" = "#A2A475",
-  "Marinisomatales" = "#79402E",
-  "HIMB59" = "#1B5331",
+  "Pelagibacterales" = "#972D15",
+  "Pseudomonadales" = "#C7B19C",
+  "Rhodobacterales" = "#00A08A",
+  "Puniceispirillales_A" = "#1B5331",
+  "HIMB59" = "#D69C4E",
   "SAR324" = "#046C9A",
-  "Puniceispirillales_A" = "#00A08A",
-  "Paceibacterales" = "#9986A5",
+  "Flavobacteriales" = "#D8B70A",
   "Other" = "#D5D5D3"
 ) %>% rev()
 
- d %>%
+d %>%
    mutate(order = if_else(is.na(order), "Other", order)) %>%
    mutate(order = if_else(!order %in% names(cols.order), "Other", order)) %>%
    ggplot(aes(
@@ -1198,10 +1276,189 @@ cols.order <- c( # Sorted on abundance
    theme(
      axis.ticks.y = element_blank(),
      legend.position = "inside",
-     legend.position.inside = c(0.85, 0.75),
+     legend.position.inside = c(0.75, 0.75),
      legend.key.height = unit(3.5, "mm"),
-     aspect.ratio = 1.0
+     aspect.ratio = 1.4
    )
+```
+
+
+# Eukaryotes
+
+```{r}
+i <- gtdb %>%
+  filter(orf %in% euk$orf) %>%
+  pull(orf)
+
+t <- tpm %>%
+  filter(orf %in% i) %>%
+  inner_join(gtdb, by = "orf") %>%
+  group_by(phylum, sample) %>%
+  # Sum the abundance of each phylum within a sample
+  summarise(tpm = sum(tpm), .groups = 'drop_last') %>%
+  # Calculate the mean abundance of each phylum over the categories
+  summarise(mean.tpm = sum(tpm), .groups = 'drop') %>%
+  filter(!is.na(phylum)) %>%
+  top_n(9, mean.tpm)
+
+t %>% arrange(desc(mean.tpm)) %>% knitr::kable()
+```
+
+```{r}
+cols.phylum <- c( # Sorted on abundance
+  "Bacteroidota" = "#FAEFD1",
+  "Cyanobacteriota" = "#D69C4E",
+  "Pseudomonadota" = "#C7B19C",
+  "Actinomycetota" = "#972D15",
+  "Verrucomicrobiota" = "#A2A475",
+  "Patescibacteria" = "#D8B70A",
+  "Bacillota_A" = "#00A08A",
+  "Bacillota_I" = "#1B5331",
+  "Planctomycetota" = "#046C9A",
+  "Other" = "#D5D5D3"
+) %>% rev()
+```
+
+
+
+```{r}
+p1 <- tpm %>%
+  filter(orf %in% i) %>%
+  inner_join(gtdb, by = "orf") %>%
+  mutate(phylum = if_else(phylum %in% names(cols.phylum), phylum, "Other")) %>%
+  group_by(sample, phylum) %>% 
+  summarise(tpm = sum(tpm), .groups = 'drop') %>%
+  mutate(phylum = factor(phylum, levels = names(cols.phylum))) %>%
+  # Call the plot
+  ggplot(aes(x = sample, 
+             y = tpm, 
+             fill = phylum
+             )
+         ) +
+  labs(x = '', y = 'Relative abundance (tpm)', fill = "") +
+  geom_col() +
+  scale_y_continuous(breaks = c(0, 40000, 80000),
+                labels = c("0", "40,0000", "80,000")
+                ) +
+  scale_fill_manual(values = cols.phylum) +
+  theme_tidy() + 
+  theme(
+    aspect.ratio = 0.5,
+    axis.ticks.x = element_blank(),
+    legend.key.height = unit(3.5, "mm"),
+    legend.margin = margin(),
+    panel.border = element_rect(fill = "transparent", linewidth = 0.5),
+    axis.text.x = element_blank()
+    ) +
+  annotate("segment", x =  0.55, xend =  2.45, y = -3000, yend = -3000, color = "#78B7C5") +
+  annotate("segment", x =  2.55, xend =  4.45, y = -3000, yend = -3000, color = "#046C9A") +
+  annotate("segment", x =  4.55, xend =  6.45, y = -3000, yend = -3000, color = "#78B7C5") +
+  annotate("segment", x =  6.55, xend =  8.45, y = -3000, yend = -3000, color = "#046C9A") +
+  annotate("segment", x =  8.55, xend = 10.45, y = -3000, yend = -3000, color = "#78B7C5") +
+  annotate("segment", x = 10.55, xend = 12.45, y = -3000, yend = -3000, color = "#046C9A") +
+  annotate("segment", x = 12.55, xend = 14.45, y = -3000, yend = -3000, color = "#78B7C5") +
+  annotate("segment", x = 14.55, xend = 16.45, y = -3000, yend = -3000, color = "#046C9A") +
+  annotate("segment", x = 16.55, xend = 18.45, y = -3000, yend = -3000, color = "#78B7C5") +
+  annotate("segment", x = 18.55, xend = 20.45, y = -3000, yend = -3000, color = "#046C9A") +
+  annotate("label", x = 2.5, y = -3000, label = "5", label.size = 0, size = 6/.pt) +
+  annotate("label", x = 6.5, y = -3000, label = "26", label.size = 0, size = 6/.pt) +
+  annotate("label", x =10.5, y = -3000, label = "42", label.size = 0, size = 6/.pt) +
+  annotate("label", x =14.5, y = -3000, label = "53", label.size = 0, size = 6/.pt) +
+  annotate("label", x =18.5, y = -3000, label = "56", label.size = 0, size = 6/.pt)
+
+p1
+```
+
+```{r}
+i <- gtdb %>%
+  filter(orf %in% euk$orf) %>%
+  pull(orf)
+
+t <- tpm %>%
+  filter(orf %in% i) %>%
+  inner_join(euk, by = "orf") %>%
+  group_by(phylum, sample) %>%
+  # Sum the abundance of each phylum within a sample
+  summarise(tpm = sum(tpm), .groups = 'drop_last') %>%
+  # Calculate the mean abundance of each phylum over the categories
+  summarise(mean.tpm = sum(tpm), .groups = 'drop') %>%
+  filter(!is.na(phylum)) %>%
+  top_n(9, mean.tpm)
+
+t %>% arrange(desc(mean.tpm)) %>% knitr::kable()
+```
+
+
+
+```{r}
+cols.phylum <- c( # Sorted on abundance
+  "Chlorophyta" = "#FAEFD1",
+  "Ciliophora" = "#D69C4E",
+  "Haptophyta" = "#C7B19C",
+  "Arthropoda" = "#972D15",
+  "Apicomplexa" = "#A2A475",
+  "Chordata" = "#D8B70A",
+  "Bacillariophyta" = "#00A08A",
+  "Ascomycota" = "#1B5331",
+  "Oomycota" = "#046C9A",
+  "Other" = "#D5D5D3"
+) %>% rev()
+```
+
+
+```{r}
+p2 <- tpm %>%
+  filter(orf %in% i) %>%
+  inner_join(euk, by = "orf") %>%
+  mutate(phylum = if_else(phylum %in% names(cols.phylum), phylum, "Other")) %>%
+  group_by(sample, phylum) %>% 
+  summarise(tpm = sum(tpm), .groups = 'drop') %>%
+  mutate(phylum = factor(phylum, levels = names(cols.phylum))) %>%
+  # Call the plot
+  ggplot(aes(x = sample, 
+             y = tpm, 
+             fill = phylum
+             )
+         ) +
+  labs(x = '', y = 'Relative abundance (tpm)', fill = "") +
+  geom_col() +
+  scale_y_continuous(breaks = c(0, 40000, 80000),
+                labels = c("0", "40,0000", "80,000")
+                ) +
+  scale_fill_manual(values = cols.phylum) +
+  theme_tidy() + 
+  theme(
+    aspect.ratio = 0.5,
+    axis.ticks.x = element_blank(),
+    legend.key.height = unit(3.5, "mm"),
+    legend.margin = margin(),
+    panel.border = element_rect(fill = "transparent", linewidth = 0.5),
+    axis.text.x = element_blank()
+    ) +
+  annotate("segment", x =  0.55, xend =  2.45, y = -3000, yend = -3000, color = "#78B7C5") +
+  annotate("segment", x =  2.55, xend =  4.45, y = -3000, yend = -3000, color = "#046C9A") +
+  annotate("segment", x =  4.55, xend =  6.45, y = -3000, yend = -3000, color = "#78B7C5") +
+  annotate("segment", x =  6.55, xend =  8.45, y = -3000, yend = -3000, color = "#046C9A") +
+  annotate("segment", x =  8.55, xend = 10.45, y = -3000, yend = -3000, color = "#78B7C5") +
+  annotate("segment", x = 10.55, xend = 12.45, y = -3000, yend = -3000, color = "#046C9A") +
+  annotate("segment", x = 12.55, xend = 14.45, y = -3000, yend = -3000, color = "#78B7C5") +
+  annotate("segment", x = 14.55, xend = 16.45, y = -3000, yend = -3000, color = "#046C9A") +
+  annotate("segment", x = 16.55, xend = 18.45, y = -3000, yend = -3000, color = "#78B7C5") +
+  annotate("segment", x = 18.55, xend = 20.45, y = -3000, yend = -3000, color = "#046C9A") +
+  annotate("label", x = 2.5, y = -3000, label = "5", label.size = 0, size = 6/.pt) +
+  annotate("label", x = 6.5, y = -3000, label = "26", label.size = 0, size = 6/.pt) +
+  annotate("label", x =10.5, y = -3000, label = "42", label.size = 0, size = 6/.pt) +
+  annotate("label", x =14.5, y = -3000, label = "53", label.size = 0, size = 6/.pt) +
+  annotate("label", x =18.5, y = -3000, label = "56", label.size = 0, size = 6/.pt)
+```
+
+
+```{r}
+p1 / p2 + plot_annotation(tag_levels = "a")
+```
+
+```{r}
+ggsave(filename = "figures/eukaryotes-orfs.png", width = 180, height = 180, units = "mm")
 ```
 
 
@@ -1259,7 +1516,6 @@ de <- topTags(qlf, adjust.method = "fdr", n = Inf) %>%
     .default = "non-de"
   )) %>%
   inner_join(eggnog, by = "ko") %>%
-  inner_join(tax, by = "orf") %>% inner_join(tpm, by = "orf") %>%
   filter(expression != "non-de") %>% tibble()
 
 remove(m, dge, qlf, contrast, design.mat)
@@ -1299,30 +1555,47 @@ The 25 KOs with the lowest (up in deeper samples) and 25 with the highest log fo
 
 ```{r}
 top.de <- de %>%
+  select(ko, logfc) %>% distinct() %>%
+  slice_max(logfc, n = 20)
+
+top.de <- de %>%
+  select(ko, logfc) %>% distinct() %>%
+  slice_min(logfc, n = 20) %>%
+  rbind(top.de)
+```
+
+
+
+```{r}
+top.de <- de %>%
+  select(ko, logfc) %>% distinct() %>%
   mutate(pathway = case_when(
-    #ko == "K02035" ~ "Extracellular solute-binding protein",
-    #ko == "K00412" ~ "Component of the ubiquinol-cytochrome c reductase",
     ko == "K01638" ~ "Glycolate utilization (glcB)",
-    #ko == "K03646" ~ "Cell envelope biogenesis (TolA)",
+    ko == "K03320" ~ "Ammonium transporter (amtAB)",
+    ko == "K00372" ~ "Assimilatory nitrate reductase (nasA)",
+    ko == "K00366" ~ "Ferredoxin-nitrite reductase: nitrate-ammonia (nirA)",
+    ko == "K00362" ~ "Nitrite reductase (nirB)",
+    ko == "K00363" ~ "Nitrite reductase (nirD)",
     ko == "K07112" ~ "Sulphur transport",
     ko == "K02256" ~ "Cytochrome C and quinol oxidase",
-    ko == "K17227" ~ "Sulfur oxidation SoxZ",
+    ko == "K17225" ~ "Sulfur oxidation soxC",
+    ko == "K17227" ~ "Sulfur oxidation soxZ",
     ko == "K00394" ~ "Dissimilatory sulfate reduction (aprA)",
+    ko == "K00381" ~ "Assimilatory sulfate reduction (cysI)",
     ko == "K17223" ~ "Sulfur oxidation SoxX",
     ko == "K00387" ~ "Sulfite oxidation (SUOX)",
-    ko == "K03520" ~ "CO oxidation (coxL, cutL)",
-    ko == "K03520" ~ "CO oxidation (coxL, cutL)",
     ko == "K03518" ~ "CO oxidation (coxS)",
     ko == "K03519" ~ "CO oxidation (coxM, cutM)",
+    ko == "K03520" ~ "CO oxidation (coxL, cutL)",
     ko == "K00363" ~ "Dissimilatory nitrite reduction (nirD)",
     ko == "K02044" ~ "Phosphonate, periplasmic substrate-binding protein",
     ko == "K02027" ~ "Carbohydrate uptake (transported)",
     ko == "K07463" ~ "Archaea-specific exonuclease",
     ko == "K15016" ~ "Hydroxypropionate-hydroxybutylate cycle",
     ko == "K21817" ~ "Synthesis of the retinal cofactor of bacteriorhodopsin",
-    ko == "K07725" ~ "CRISPR-associated protein"
-    #ko == "K06937" ~ "Membrane-spanning GDGT lipids",
-    #ko == "K03934" ~ "NADH dehydrogenase (ubiquinone) Fe-S protein"
+    ko == "K07725" ~ "CRISPR-associated protein",
+    ko == "K00123" ~ "Formate dehydrogenase (fdhF)",
+    ko == "K05973" ~ "Poly(3-hydroxybutyrate) depolymerase (phaZ)"
   )) %>% filter(!is.na(pathway))
 ```
 
@@ -1331,20 +1604,15 @@ top.de <- de %>%
 #| label: fig-de
 
 top.de %>%
-  filter(!is.na(order)) %>%
-  mutate(order = if_else(
-    order %in% names(cols.order), true = order, false = "Other"
-  )) %>%
-  mutate(order = factor(order, levels = names(cols.order))) %>%
   mutate(ko = paste(ko, pathway, sep = ": ")) %>%
   ggplot(aes(x = logfc, 
              y = ko, 
-             fill = order
+             #fill = order
              )
          ) +
   geom_col() + geom_vline(xintercept = 0, linewidth = unit(0.5, "mm"), color = "grey") +
   labs(x = expression("Log"["2"]*" fold change"), y = "", fill = "") +
-  scale_fill_manual(values = cols.order) + theme_tidy(fontsize = 6, legend = "right") +
+  #scale_fill_manual(values = cols.order) + theme_tidy(fontsize = 6, legend = "right") +
   theme(
     aspect.ratio = 1.5,
     axis.ticks.y = element_blank(),
@@ -1353,6 +1621,199 @@ top.de %>%
     panel.border = element_rect(fill = "transparent", linewidth = unit(0.5, "mm"))
   )
 ```
+
+# Magmap
+
+## Input files
+
+```{r}
+tpm <- read_tsv("data/magmap/tpm-tidy.tsv.gz", show_col_types = F) %>%
+  mutate(sample = gsub("R", ".", sample)) %>%
+  mutate(sample = factor(sample, levels = c(
+    "S1.1", "S1.2", "S2.1", "S2.2", "S3.1", "S3.2", "S4.1", "S4.2", "S5.1", "S6.1", 
+    "S5.2", "S6.2", "S7.1", "S7.2", "S8.1", "S8.2", "S9.1", "S9.2", "S10.1", "S10.2"
+  )))
+
+gtdb <- read_tsv("data/magmap/gtdb-tidy.tsv.gz", show_col_types = F) %>%
+  select(orf, gtdb_taxonomy) %>%
+  separate_wider_delim(gtdb_taxonomy, delim = ";", names = c("domain","phylum","class","order","family","genus","species")) %>%
+  mutate(across(-1, \(x) gsub(x, pattern = "[a-z]__", replacement = "")))
+```
+
+
+## Community phylum
+
+```{r}
+t <- tpm %>%
+  inner_join(gtdb, by = "orf") %>%
+  group_by(phylum, sample) %>%
+  # Sum the abundance of each phylum within a sample
+  summarise(tpm = sum(tpm), .groups = 'drop_last') %>%
+  # Calculate the mean abundance of each phylum over the categories
+  summarise(mean.tpm = sum(tpm), .groups = 'drop') %>%
+  filter(!is.na(phylum)) %>%
+  top_n(9, mean.tpm)
+
+t %>% arrange(desc(mean.tpm)) %>% knitr::kable()
+```
+
+```{r}
+t <- names(cols.phylum)
+
+taxref <- gtdb %>%
+  left_join(t %>% transmute(phylum, topphylum = phylum), by = "phylum") %>%
+  replace_na(list("topphylum" = "Other"))
+```
+
+
+```{r}
+cols.phylum <- c( # Sorted on abundance
+  "Pseudomonadota" = "#C7B19C",
+  "Thermoplasmatota" = "#972D15",
+  "Bacteroidota" = "#FAEFD1",
+  "Cyanobacteriota" = "#D69C4E",
+  "Thermoproteota" = "#A2A475",
+  "Marinisomatota" = "#00A08A",
+  "Chloroflexota" = "#D8B70A",
+  "SAR324" = "#1B5331",
+  "Other" = "#D5D5D3"
+) %>% rev()
+
+tpm %>%
+  left_join(gtdb, by = "orf") %>%
+  mutate(phylum = if_else(phylum %in% names(cols.phylum), phylum, "Other")) %>%
+  # Summarize in order to have the sum for each category and topphylum
+  group_by(sample, phylum) %>% 
+  summarise(tpm = sum(tpm), .groups = 'drop') %>%
+  # Call the plot
+  ggplot(aes(x = sample, 
+             y = tpm, 
+             fill = fct_relevel(phylum, names(cols.phylum))
+             )
+         ) +
+  labs(x = '', y = expression('Relative abundance (tpm '%*% '10'^'6'*')'), fill = "Phylum") +
+  geom_col() +
+  scale_y_continuous(breaks = c(0, 2e5, 4e5, 6e5, 8e5, 1e6),
+                labels = c("0.0", "0.2", "0.4", "0.6", "0.8", "1.0")
+                ) +
+  scale_fill_manual(values = cols.phylum) +
+  theme_tidy() + guides(fill = guide_legend(reverse = F)) +
+  theme(
+    aspect.ratio = 0.5,
+    axis.ticks.x = element_blank(),
+    legend.key.height = unit(3.5, "mm"),
+    legend.margin = margin(),
+    panel.border = element_rect(fill = "transparent", linewidth = 0.5),
+    axis.text.x = element_blank()
+    ) +
+  annotate("segment", x =  0.55, xend =  2.45, y = -30000, yend = -30000, color = "#78B7C5") +
+  annotate("segment", x =  2.55, xend =  4.45, y = -30000, yend = -30000, color = "#046C9A") +
+  annotate("segment", x =  4.55, xend =  6.45, y = -30000, yend = -30000, color = "#78B7C5") +
+  annotate("segment", x =  6.55, xend =  8.45, y = -30000, yend = -30000, color = "#046C9A") +
+  annotate("segment", x =  8.55, xend = 10.45, y = -30000, yend = -30000, color = "#78B7C5") +
+  annotate("segment", x = 10.55, xend = 12.45, y = -30000, yend = -30000, color = "#046C9A") +
+  annotate("segment", x = 12.55, xend = 14.45, y = -30000, yend = -30000, color = "#78B7C5") +
+  annotate("segment", x = 14.55, xend = 16.45, y = -30000, yend = -30000, color = "#046C9A") +
+  annotate("segment", x = 16.55, xend = 18.45, y = -30000, yend = -30000, color = "#78B7C5") +
+  annotate("segment", x = 18.55, xend = 20.45, y = -30000, yend = -30000, color = "#046C9A") +
+  annotate("label", x = 2.5, y = -30000, label = "5", label.size = 0, size = 6/.pt) +
+  annotate("label", x = 6.5, y = -30000, label = "26", label.size = 0, size = 6/.pt) +
+  annotate("label", x =10.5, y = -30000, label = "42", label.size = 0, size = 6/.pt) +
+  annotate("label", x =14.5, y = -30000, label = "53", label.size = 0, size = 6/.pt) +
+  annotate("label", x =18.5, y = -30000, label = "56", label.size = 0, size = 6/.pt)
+```
+
+```{r}
+ggsave(filename = "figures/magmap-phylum.pdf", width = 180, height = 100, units = "mm")
+```
+
+
+## Community genus
+
+```{r}
+t <- tpm %>%
+  inner_join(gtdb, by = "orf") %>%
+  group_by(genus, sample) %>%
+  # Sum the abundance of each phylum within a sample
+  summarise(tpm = sum(tpm), .groups = 'drop_last') %>%
+  # Calculate the mean abundance of each phylum over the categories
+  summarise(mean.tpm = sum(tpm), .groups = 'drop') %>%
+  filter(!is.na(genus)) %>%
+  top_n(9, mean.tpm)
+
+t %>% arrange(desc(mean.tpm)) %>% knitr::kable()
+```
+
+```{r}
+taxref <- gtdb %>%
+  left_join(t %>% transmute(genus, topphylum = genus), by = "genus") %>%
+  replace_na(list("topphylum" = "Other"))
+```
+
+
+```{r}
+
+cols.genus <- c( # Sorted on abundance
+  "MGIIb-O3" = "#C7B19C",
+  "MGIIb-O2" = "#972D15",
+  "Pseudothioglobus" = "#FAEFD1",
+  "Pelagibacter" = "#1B5331",
+  "HTCC2207" = "#D69C4E",
+  "ASP10-02a" = "#D8B70A",
+  "UBA9145" = "#00A08A",
+  "Arctic96AD-7" = "#8D8680",
+  "CAJJBL01" = "#A2A475",
+  "Other" = "#D5D5D3"
+) %>% rev()
+
+tpm %>%
+  left_join(taxref, by = "orf") %>%
+  replace_na(list("topphylum" = "Unidentified")) %>%
+  # Summarize in order to have the sum for each category and topphylum
+  group_by(sample, topphylum) %>% 
+  summarise(tpm = sum(tpm), .groups = 'drop') %>%
+  # Call the plot
+  ggplot(aes(x = sample, 
+             y = tpm, 
+             fill = fct_relevel(topphylum, names(cols.genus))
+             )
+         ) +
+  labs(x = '', y = expression('Relative abundance (tpm '%*% '10'^'6'*')'), fill = "Genus") +
+  geom_col() +
+  scale_y_continuous(breaks = c(0, 2e5, 4e5, 6e5, 8e5, 1e6),
+                labels = c("0.0", "0.2", "0.4", "0.6", "0.8", "1.0")
+                ) +
+  scale_fill_manual(values = cols.genus) +
+  theme_tidy() + guides(fill = guide_legend(reverse = TRUE)) +
+  theme(
+    aspect.ratio = 0.5,
+    axis.ticks.x = element_blank(),
+    legend.key.height = unit(3.5, "mm"),
+    legend.margin = margin(),
+    panel.border = element_rect(fill = "transparent", linewidth = 0.5),
+    axis.text.x = element_blank()
+    ) +
+  annotate("segment", x =  0.55, xend =  2.45, y = -30000, yend = -30000, color = "#78B7C5") +
+  annotate("segment", x =  2.55, xend =  4.45, y = -30000, yend = -30000, color = "#046C9A") +
+  annotate("segment", x =  4.55, xend =  6.45, y = -30000, yend = -30000, color = "#78B7C5") +
+  annotate("segment", x =  6.55, xend =  8.45, y = -30000, yend = -30000, color = "#046C9A") +
+  annotate("segment", x =  8.55, xend = 10.45, y = -30000, yend = -30000, color = "#78B7C5") +
+  annotate("segment", x = 10.55, xend = 12.45, y = -30000, yend = -30000, color = "#046C9A") +
+  annotate("segment", x = 12.55, xend = 14.45, y = -30000, yend = -30000, color = "#78B7C5") +
+  annotate("segment", x = 14.55, xend = 16.45, y = -30000, yend = -30000, color = "#046C9A") +
+  annotate("segment", x = 16.55, xend = 18.45, y = -30000, yend = -30000, color = "#78B7C5") +
+  annotate("segment", x = 18.55, xend = 20.45, y = -30000, yend = -30000, color = "#046C9A") +
+  annotate("label", x = 2.5, y = -30000, label = "5", label.size = 0, size = 6/.pt) +
+  annotate("label", x = 6.5, y = -30000, label = "26", label.size = 0, size = 6/.pt) +
+  annotate("label", x =10.5, y = -30000, label = "42", label.size = 0, size = 6/.pt) +
+  annotate("label", x =14.5, y = -30000, label = "53", label.size = 0, size = 6/.pt) +
+  annotate("label", x =18.5, y = -30000, label = "56", label.size = 0, size = 6/.pt)
+```
+
+```{r}
+ggsave(filename = "figures/magmap-phylum.pdf", width = 180, height = 100, units = "mm")
+```
+
 
 # DNA sequencing: 16S amplicons
 
@@ -1515,323 +1976,4 @@ p1 + p2 + plot_annotation(tag_levels = "a") & theme_tidy() & theme(
   plot.tag.position = c(0.03,0.98),
   axis.ticks.x = element_blank()
 )
-```
-
-# Supplemental: Hydrochemistry
-
-```{r}
-tmp <- readxl::read_excel("data/amplicons/hydrochemistry.xlsx", sheet = 1)
-```
-
-```{r}
-p1 <- tmp %>%
-  ggplot(aes(
-    x = sal,
-    y = depth
-  )) +
-  geom_smooth(orientation = "y", se = FALSE, method = "gam", color = "black", linewidth = 0.75) +
-  geom_errorbar(aes(
-    xmin = sal - sal.se, 
-    xmax = sal + sal.se), linewidth = 0.3, color = "black", width = 12) +
-  theme_tidy() + scale_y_reverse() + labs(x = expression("Salinity (g kg"^"-1"*")"), y = "Depth (m)") +
-  theme(
-    aspect.ratio = 1.5
-  )
-```
-
-```{r}
-p2 <- tmp %>%
-  ggplot(aes(
-    x = temp,
-    y = depth
-  )) +
-  geom_smooth(orientation = "y", se = FALSE, color = "black", linewidth = 0.75) +
-  geom_errorbar(aes(
-    xmin = temp - temp.se, 
-    xmax = temp + temp.se), linewidth = 0.3, color = "black", width = 12) +
-  theme_tidy() + scale_y_reverse() + labs(x = expression("Temperature (\u00B0C)")) +
-  theme(
-    axis.title.y = element_blank(),
-    axis.text.y = element_blank(),
-    aspect.ratio = 1.5
-  )
-```
-
-```{r}
-p3 <- tmp %>% na.omit() %>%
-  ggplot(aes(
-    x = chla,
-    y = depth
-  )) +
-  geom_smooth(orientation = "y", se = FALSE, color = "black", linewidth = 0.75, span = 0.6) +
-  geom_errorbar(aes(
-    xmin = chla - chla.se, 
-    xmax = chla + chla.se), linewidth = 0.3, color = "black", width = 12)   +
-  theme_tidy() + scale_y_reverse() + labs(x = expression("Chlorophyll a (µg dm"^"-3"*")")) +
-  theme(
-    axis.title.y = element_blank(),
-    axis.text.y = element_blank(),
-    aspect.ratio = 1.5
-  )
-```
-
-```{r}
-tmp <- readxl::read_excel("data/amplicons/hydrochemistry.xlsx", sheet = 2)
-```
-
-```{r}
-p4 <- tmp %>% 
-  mutate(station = as.character(station)) %>%
-  ggplot(aes(
-    x = abu,
-    y = depth,
-    color = station, fill = station
-  )) +
-  #geom_smooth(orientation = "y", fill = "#BDBDBD", color = "#BDBDBD", linewidth = 0, linetype = 0) + 
-  geom_point(size = 3, shape = 21, stroke = 0.7) +
-  geom_linerange(aes(xmin = abu-abu.se, xmax = abu+abu.se)) +
-  scale_y_reverse() +
-  scale_fill_manual(values = alpha(cols.station, alpha = 0.3), guide = "none") + scale_color_manual(values = cols.station, guide = "none") +
-  theme_tidy() + labs(x = expression("Cell number ("%*%"10"^"8"*" dm"^"-3"*")"), y = "Depth (m)") +
-  theme(
-    aspect.ratio = 1.5,
-    axis.text.y = element_blank(),
-    axis.title.y = element_blank()
-  )
-```
-
-```{r}
-p5 <- tmp %>% 
-  mutate(station = as.character(station)) %>%
-  ggplot(aes(
-    x = growth,
-    y = depth,
-    color = station, fill = station
-  )) +
-  #geom_smooth(method = "gam", fill = "#BDBDBD", color = "#BDBDBD", linewidth = 0, orientation = "y", linetype = 0) + 
-  geom_point(size = 3, shape = 21, stroke = 0.5) +
-  geom_linerange(aes(xmin = growth-growth.se, xmax = growth+growth.se)) +
-  scale_y_reverse() +
-  scale_fill_manual(values = alpha(cols.station, alpha = 0.3), guide = "none") + 
-  scale_color_manual(values = cols.station, guide = "none") +
-  labs(x = expression("Growth ("%*%"10"^"7"*" dm"^"-3"*" d"^"-1"*")"), y = "Depth (m)") +
-  theme_tidy() +
-  theme(
-    aspect.ratio = 1.5
-  )
-```
-
-```{r}
-tmp <- readxl::read_excel("data/amplicons/hydrochemistry.xlsx", sheet = 3)
-
-p6 <- tmp %>% na.omit() %>%
-  mutate(station = as.character(station)) %>%
-  ggplot(aes(
-    x = resp,
-    y = depth,
-    color = station, fill = station
-  )) +
-  geom_point(size = 3, shape = 21, stroke = 0.7) + 
-  geom_linerange(aes(xmin = resp-resp.se, xmax = resp+resp.se)) +
-  #geom_smooth(method = "lm", orientation = "y", fill = "#BDBDBD", color = "#BDBDBD", linewidth = 0, linetype = 0) + scale_y_reverse() +
-  scale_fill_manual(values = alpha(cols.station, alpha = 0.3), guide = "none") + 
-  scale_color_manual(values = cols.station, guide = "none") +
-  labs(x = expression("Respiration (µmol O"[2]*" dm"^"-3"*" d"^"-1"*")"), y = "Depth (m)") +
-  theme_tidy() +
-  theme(
-    aspect.ratio = 1.5,
-    axis.text.y = element_blank(),
-    axis.title.y = element_blank(),
-  )
-```
-
-```{r}
-tmp <- readxl::read_excel("data/amplicons/hydrochemistry.xlsx", sheet = 4)
-
-p7 <- tmp %>% na.omit() %>%
-  mutate(station = factor(station, levels = c("5", "26", "42", "53", "56"))) %>%
-  ggplot(aes(
-    x = cellvol,
-    y = depth,
-    color = station, fill = station
-  )) +
-  geom_point(size = 3, shape = 21, stroke = 0.7) + 
-  #geom_smooth(method = "lm", fill = "#BDBDBD", color = "#BDBDBD", linewidth = 0, linetype = 0) + scale_y_reverse() +
-  scale_fill_manual(values = alpha(cols.station, alpha = 0.3), name = "Station") + scale_color_manual(values = cols.station, name = "Station") +
-  labs(x = expression("Cell volume (µm"^"3"*")"), y = "Depth (m)") +
-  theme_tidy() +
-  theme(
-    aspect.ratio = 1.5,
-    axis.text.y = element_blank(),
-    axis.title.y = element_blank(),
-  )
-```
-
-```{r}
-library(patchwork)
-```
-
-```{r}
-p1 + p2 + p3 + p4 + p5 + p6 + p7 + plot_layout(nrow = 2, guides = "collect") + plot_annotation(tag_levels = "a") &
-  theme(
-    plot.margin = margin(r = 4, b = 4),
-    plot.tag.location = "panel",
-    plot.tag.position = c(0.05,0.97)
-  )
-```
-
-## Thymidine
-
-```{r}
-tmp <- readxl::read_excel("data/amplicons/hydrochemistry.xlsx", sheet = 5)
-```
-
-```{r}
-p1 <- tmp %>% 
-  ggplot(aes(
-    x = time,
-    y = abun
-  )) +
-  geom_pointrange(aes(
-    ymin = abun-abun.se, ymax = abun + abun.se)) +
-  geom_curve(x = 0, xend = 9, y = 0.55, yend = 1.695, curvature = 0.3, linewidth = 0.5) +
-  #geom_smooth(se = FALSE, color = "black", lwd = 0.5, span = 10) +
-  scale_x_continuous(n.breaks = 6, name = "Time (days)") +
-  labs(
-    x = "Time (days)",
-    y = expression("Cell number (dm"^"-3"*")")
-    ) + 
-  theme_tidy() +
-  theme(
-    axis.title.y.right = element_text(angle = 90),
-    legend.position = "inside",
-    legend.position.inside = c(0.12, 0.88),
-    legend.title = element_blank(),
-    aspect.ratio = 2
-  )
-```
-
-```{r}
-p2 <- tmp %>% 
-  ggplot(aes(
-    x = time,
-    y = ht
-  )) +
-  geom_pointrange(aes(
-    ymin = ht-ht.se, ymax = ht + ht.se)) +
-  geom_curve(x = 0, xend = 9, y = 1.945, yend = 33.75, curvature = 0.4) +
-  #geom_smooth(se = FALSE, color = "black", lwd = 0.5, span = 10) +
-  scale_x_continuous(n.breaks = 6, name = "Time (days)") +
-  labs(
-    x = "Time (days)",
-    y = expression(phantom()^"3"*"H-thymidine uptake ("%*%"10"^"-13"*" mol dm"^"-3"*" h"^"-1"*")")
-    ) + 
-  theme_tidy() +
-  theme(
-    axis.title.y.right = element_text(angle = 90),
-    legend.position = "inside",
-    legend.position.inside = c(0.12, 0.88),
-    legend.title = element_blank(),
-    aspect.ratio = 2
-  )
-```
-
-```{r}
-tmp <- readxl::read_excel("data/amplicons/hydrochemistry.xlsx", sheet = 6)
-
-p3 <- tmp %>%
-  ggplot(aes(
-    x = ta,
-    y = fct_reorder(taxa, ta)
-  )) + 
-  geom_col(width = 0.3, fill = "#F0F0F0", color = "black") +
-  theme_tidy() + xlab("Thymidine-adenosine content (%)") +
-  theme(
-    axis.title.y = element_blank(),
-    axis.ticks.y = element_blank(),
-    aspect.ratio = 2.0
-  )
-```
-
-```{r}
-p1 + p2 + p3 + plot_annotation(tag_levels = "a") &
-  theme(
-    plot.tag.location = "panel",
-    plot.tag.position = c(0.05, 0.97)
-  )
-```
-
-## Polar map
-
-```{r}
-library(sf)
-library(terra)
-sea <- st_read("../Protocols/World_Seas_IHO_v3/") %>% filter(NAME == "Arctic Ocean")
-sea <- vect(sea)
-
-bathy <- marmap::getNOAA.bathy(-180, 180, 60, 90, res = 20, keep = TRUE)
-bathy <- marmap::as.raster(bathy)
-bathy <- as(bathy, "SpatRaster")
-masked <- mask(bathy, sea)
-
-masked <- as(masked, "Raster")
-masked <- as(masked, "SpatialPixelsDataFrame") 
-masked <- data.frame(masked)
-
-stations <- meta %>%
-  select(station, lat, long) %>%
-  distinct()
-
-remove(sea, bathy)
-```
-
-```{r}
-# Defines the x axes required
-wm <- map_data("world") %>% filter(lat > 60) %>% tibble()
-x_lines <- seq(-120,180, by = 60)
-
-ggplot() +
-  # Draw the Arctic sea
-  geom_tile(
-    data = masked, 
-    aes(x = x, y = y, fill = layer)) +
-  # Draw the countries
-  geom_polygon(
-    data = wm, 
-    aes(x = long, y = lat, group = group), 
-    fill = "#D9D9D9", linewidth = 0, alpha = 0.8) +
-  # Convert to polar coordinates
-  coord_map("ortho", orientation = c(90, 0, 0)) +
-  scale_y_continuous(breaks = NULL, labels = NULL) +
-  scale_x_continuous(breaks = NULL) + 
-  labs(x = "", y = "") +
-  geom_text(
-    aes(x = x_lines, y = 58, label = c("120°W", "60°W", "0°", "60°E", "120°E", "180°W")
-    ), 
-    size = 6/.pt) +
-  geom_hline(
-    aes(yintercept = 60), 
-    size = 0.5)  + 
-  scale_fill_gradient(low = "#0570b0", high = "#f7fbff", guide = "none") + 
-  scale_color_manual(values = cols.station, guide = "none") +
-  geom_hline(
-    aes(yintercept = 66.34), 
-    linewidth = 0.25, linetype = "dashed")  +
-  annotate("text", x = 180, y = 65.5, hjust = -0.2, label = "Arctic circle", size = 6/.pt) +
-  annotate("text", x = 180, y = 80, label = "Arctic Ocean", color = "#0570b0", fontface = "bold", size = 6/.pt) +
-  geom_segment(
-    aes(y = 60, yend = 90, x = x_lines, xend = x_lines), 
-    linetype = "dashed", linewidth = 0.25, color = "black") +
-  geom_point(
-    data = stations, 
-    aes(x = long, y = lat, color = station), 
-    size = 3.5) +
-  geom_text(
-    data = stations, 
-    aes(x = long, y = lat, label = station), 
-    size = 6/.pt, color = "white") +  
-  theme(
-    panel.background = element_blank(),
-    panel.grid.major = element_line(linewidth = 0.25, linetype = 'dashed', colour = "black")
-    )
 ```

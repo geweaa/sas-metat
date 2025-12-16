@@ -716,15 +716,52 @@ ggsave(filename = "figures/rda.pdf", width = 180, height = 80, units = "mm")
 ## Broad overview community functions using COG categories
 
 ```{r}
+cols.order <- c( # Sorted on abundance
+  "Pseudomonadales" = "#C7B19C",
+  "Poseidoniales" = "#D69C4E",
+  "Pelagibacterales" = "#972D15",
+  "PS1" = "#FAEFD1",
+  "Flavobacteriales" = "#D8B70A",
+  "Nitrososphaerales" = "#A2A475",
+  "Cyanobacteriales" = "#00A08A",
+  "SAR86" = "#1B5331",
+  "Rhodobacterales" = "#9986A5",
+  "Other" = "#D5D5D3",
+  "Not annotated" = "#046C9A"
+) %>% rev()
+```
+
+
+```{r}
 #| label: read-cogs
 
 cogs <- read_tsv("data/cogs.tsv", show_col_types = FALSE) %>%
-  rename(cog = cog_category)
+  rename(cog = cog_category) %>%
+  filter(cog %in% c('C','J','P','G','U','M'))
 
-i <- eggnog %>% inner_join(cogs, by = "cog") %>%
+i <- eggnog %>% 
+  inner_join(cogs, by = "cog") %>%
   inner_join(tpm, by = "orf") %>%
-  inner_join(meta, by = "sample") %>% filter(station != "5") %>%
-  group_by(cat) %>% summarise(tpm = sum(tpm), .groups = "drop") %>% arrange(desc(tpm)) %>% pull(cat)
+  inner_join(meta, by = "sample") %>%
+  inner_join(tax, by = "orf") %>%
+  replace_na(list(order = 'Not annotated')) %>%
+  mutate(order = case_when(
+    order %in% names(cols.order) ~ order,
+    !order %in% names(cols.order) ~ 'Other',
+    .default = NA
+  )) %>%
+  group_by(cat, station, layer, order) %>% 
+  summarise(tpm = sum(tpm), .groups = "drop") %>%
+  # Prepare the labels
+  mutate(layer = if_else(layer == '10m', '10 m', 'chl. m')) %>%
+  mutate(layer = paste(station, ' (', layer, ')', sep = '')) %>%
+  mutate(layer = factor(layer, levels = 
+                          c('5 (10 m)', '5 (chl. m)', 
+                            '26 (10 m)', '26 (chl. m)', 
+                            '42 (10 m)', '42 (chl. m)',
+                            '53 (10 m)', '53 (chl. m)',
+                            '56 (10 m)', '56 (chl. m)'
+                        )))
 ```
 
 
@@ -732,37 +769,26 @@ i <- eggnog %>% inner_join(cogs, by = "cog") %>%
 #| fig-cap: The abundance (in tpm) of COG categories summed for each depth layer.
 #| label: fig-cog
 
-eggnog %>% inner_join(cogs, by = "cog") %>%
-  inner_join(tpm, by = "orf") %>%
-  inner_join(meta, by = "sample") %>% filter(station != "5") %>%
-  group_by(layer, cat) %>% summarise(tpm = sum(tpm), .groups = "drop") %>%
-  mutate(layer = factor(layer, levels = c("chlMax","10m"))) %>%
-  # Plot
+i %>%
   ggplot(aes(
     x = tpm,
-    y = fct_relevel(cat, i),
-    group = layer,
-    fill = layer
+    y = fct_rev(layer),
+    fill = fct_relevel(order, names(cols.order))
   )) +
-  geom_col(width = 0.7, position = position_dodge(width = 0.8)) + 
-  scale_fill_manual(values = c("chlMax" = "#046C9A", "10m" = "#78B7C5"), 
-                    labels = c("10m" = "10 m", "chlMax" = "Chl. max")
-                    ) +
-  theme_tidy() + 
-  scale_x_continuous(breaks = c(0, 2e5, 4e5, 6e5), labels = c(
-    "0", 
-    expression("2" %*% "10"^5), expression("4" %*% "10"^5), expression("6" %*% "10"^5)
-    )) + xlab("Relative abundance (tpm)") + guides(fill = guide_legend(reverse = T)) +
+  geom_col() + facet_wrap(~ cat, scales = 'free_x') + labs(x = 'Relative abundance (tpm)') +
+  scale_fill_manual(values = cols.order) +
+  theme_tidy(fontsize = 5) + 
   theme(
     axis.title.y = element_blank(),
     axis.ticks.y = element_blank(),
-    legend.title = element_blank(),
-    legend.position = "inside",
-    legend.position.inside = c(0.80,0.85),
-    legend.background = element_blank(),
-    aspect.ratio = 1.5
+    legend.title = element_blank()
   )
 ```
+
+```{r}
+ggsave('figures/cogs-stations.pdf', width = 180, height = 140, units = 'mm')
+```
+
 
 # Functional annotation - most abundant KOs
 

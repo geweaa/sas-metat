@@ -113,10 +113,23 @@ orfs <- gtdb %>%
 tax <- gtdb %>%
   filter(!orf %in% orfs) %>%
   rbind(pro) %>%
-  rbind(euk %>% filter(!orf %in% gtdb$orf))
+  rbind(euk %>% filter(!orf %in% gtdb$orf)) %>%
+  select(-taxid, -evalue)
 
 remove(md, orfs, pro)
 ```
+
+
+```{r}
+
+# Add the output of running Diamond again Prokka-annotated genomes
+tax <- read_tsv('data/n.tsv', col_names = F, col_types = 'cc') %>%
+  rename(orf = 1, tax = 2) %>% 
+  separate(tax, into = c('domain','phylum','class','order','family','genus','species'), sep = ';') %>% 
+  mutate(across(-1, \(x) gsub(pattern = '[a-z]__', replacement = '',x))) %>%
+  rbind(tax)
+```
+
 
 
 ```{r}
@@ -145,12 +158,7 @@ In total, there are `r nrow(meta)` metatranscriptomes from five stations. At eve
 63.6 % of the transcript were functionally annotated with Kofam scan. A summary of the bioinformatic pipeline will soon be added to this introduction.
 
 ```{r}
-#| label: read-eggnogmapper
-
-eggnog <- read_tsv("data/metatdenovo/user_assembly.prokka.emapper.tsv.gz", show_col_types = F) %>%
-  mutate(kegg_ko = gsub("ko:", "", kegg_ko)) %>%
-  filter(kegg_ko != "-") %>%
-  select(orf, evalue, cog = cog_category, ko = kegg_ko, module = kegg_module, name = preferred_name, description, max_annot_lvl)
+#| label: read-kofamscan
 
 kofam <- read_tsv("data/metatdenovo/user_assembly.prokka.kofamscan-uniq.tsv.gz", show_col_types = F) %>%
   select(-thrshld, -score)
@@ -293,6 +301,102 @@ tpm %>%
 
 # Community composition
 
+## Community composition - order
+
+```{r most abundant orders for plotting}
+#| tbl-cap: The eight most abundant orders, after summing the TPM of all the samples.
+
+t <- tpm %>%
+  inner_join(tax, by = "orf") %>% filter(domain %in% c("Bacteria", "Archaea")) %>%
+  group_by(order, sample) %>%
+  # Sum the abundance of each phylum within a sample
+  summarise(tpm = sum(tpm), .groups = 'drop_last') %>%
+  # Calculate the mean abundance of each phylum over the categories
+  summarise(mean.tpm = sum(tpm), .groups = 'drop') %>%
+  filter(!is.na(order)) %>%
+  top_n(9, mean.tpm)
+
+t %>% arrange(desc(mean.tpm))
+```
+
+
+```{r prepare the taxonomy - order, include=FALSE}
+cols.order <- c( # Sorted on abundance
+  "Pseudomonadales" = "#C7B19C",
+  "Poseidoniales" = "#D69C4E",
+  "Pelagibacterales" = "#972D15",
+  "PS1" = "#FAEFD1",
+  "Nitrososphaerales" = "#A2A475",
+  "Flavobacteriales" = "#D8B70A",
+  "Enterobacterales" = "#00A08A",
+  "SAR86" = "#1B5331",
+  "Rhodobacterales" = "#9986A5",
+  "Other" = "#D5D5D3",
+  "Eukaryotes" = "#046C9A"
+)
+```
+
+@fig-order explores the data by plotting the most abundant orders over all samples, regardless if the RNA transcript was functionally annotated or not. Note that transcripts without a taxonomic annotation (the unidentified fraction in @fig-phylum) are not included in this figure. It clearly shows how the Nitrosphaerales are more abundant in the deeper layer.
+
+```{r}
+#| label: fig-order
+#| fig-cap: Community composition of all RNA transcripts on order level. The orders are sorted according to tpm while grouping low-abundant orders as 'Other'. Transcripts without taxonomic annotation are not included. For each station, the two bars left of the label were sampled at 10 m depth, while the two bars on the right were sampled at chlorophyll max (between 20 and 45 m depth)
+#| out-width: 100%
+
+p.order <- tpm %>%
+  left_join(tax, by = "orf") %>%
+  mutate(order = case_when(
+    order %in% t$order ~ order,
+    domain == "Eukaryota" ~ "Eukaryotes",
+    is.na(order) ~ "Unidentified",
+    !order %in% t$order ~ "Other"
+  )) %>%
+  filter(order != "Unidentified") %>%
+  # Summarize in order to have the sum for each category and topphylum
+  group_by(sample, order) %>% 
+  summarise(tpm = sum(tpm), .groups = 'drop') %>%
+  # Call the plot
+  ggplot(aes(x = sample, 
+             y = tpm, 
+             fill = fct_relevel(order, rev(names(cols.order)))
+             )
+         ) +
+  labs(x = '', y = expression('Relative abundance (TPM '%*% '10'^'6'*')'), fill = "Order") +
+  geom_col() +
+  scale_y_continuous(breaks = c(0, 2e5, 4e5, 6e5, 8e5, 1e6),
+                labels = c("0.0", "0.2", "0.4", "0.6", "0.8", "1.0")
+                ) +
+  scale_fill_manual(values = cols.order) +
+  theme_tidy(legend = "right", fontsize = 5) +
+  #guides(fill = guide_legend(nrow = 3, reverse = TRUE)) +
+  theme(
+    axis.ticks.x = element_blank(),
+    legend.key.width = unit(3.5, "mm"),
+    legend.key.height = unit(4, "mm"),
+    legend.margin = margin(t = -10),
+    legend.text = element_text(margin = margin(l = 2)),
+    axis.text.x = element_blank()
+    ) +
+  annotate("segment", x =  0.55, xend =  2.45, y = -25000, yend = -25000, color = "#78B7C5") +
+  annotate("segment", x =  2.55, xend =  4.45, y = -25000, yend = -25000, color = "#046C9A") +
+  annotate("segment", x =  4.55, xend =  6.45, y = -25000, yend = -25000, color = "#78B7C5") +
+  annotate("segment", x =  6.55, xend =  8.45, y = -25000, yend = -25000, color = "#046C9A") +
+  annotate("segment", x =  8.55, xend = 10.45, y = -25000, yend = -25000, color = "#78B7C5") +
+  annotate("segment", x = 10.55, xend = 12.45, y = -25000, yend = -25000, color = "#046C9A") +
+  annotate("segment", x = 12.55, xend = 14.45, y = -25000, yend = -25000, color = "#78B7C5") +
+  annotate("segment", x = 14.55, xend = 16.45, y = -25000, yend = -25000, color = "#046C9A") +
+  annotate("segment", x = 16.55, xend = 18.45, y = -25000, yend = -25000, color = "#78B7C5") +
+  annotate("segment", x = 18.55, xend = 20.45, y = -25000, yend = -25000, color = "#046C9A") +
+  annotate("label", x = 2.5, y = -25000, label = "Station 5", label.size = 0, size = 5/.pt) +
+  annotate("label", x = 6.5, y = -25000, label = "26", label.size = 0, size = 5/.pt) +
+  annotate("label", x =10.5, y = -25000, label = "42", label.size = 0, size = 5/.pt) +
+  annotate("label", x =14.5, y = -25000, label = "53", label.size = 0, size = 5/.pt) +
+  annotate("label", x =18.5, y = -25000, label = "56", label.size = 0, size = 5/.pt)
+
+p.order
+```
+
+
 ## Community composition - phylum
 
 ```{r most abundant phyla for plotting}
@@ -379,7 +483,7 @@ p.phylum <- tpm %>%
   annotate("segment", x = 14.55, xend = 16.45, y = -30000, yend = -30000, color = "#046C9A") +
   annotate("segment", x = 16.55, xend = 18.45, y = -30000, yend = -30000, color = "#78B7C5") +
   annotate("segment", x = 18.55, xend = 20.45, y = -30000, yend = -30000, color = "#046C9A") +
-  annotate("label", x = 2.5, y = -30000, label = "5", label.size = 0, size = 5/.pt) +
+  annotate("label", x = 2.5, y = -30000, label = "Station 5", label.size = 0, size = 5/.pt) +
   annotate("label", x = 6.5, y = -30000, label = "26", label.size = 0, size = 5/.pt) +
   annotate("label", x =10.5, y = -30000, label = "42", label.size = 0, size = 5/.pt) +
   annotate("label", x =14.5, y = -30000, label = "53", label.size = 0, size = 5/.pt) +
@@ -388,106 +492,7 @@ p.phylum <- tpm %>%
 p.phylum
 ```
 
-```{r}
-ggsave(filename = "figures/metatdenovo-phylum.pdf", width = 180, height = 120, units = "mm")
-```
 
-
-## Community composition - order
-
-```{r most abundant orders for plotting}
-#| tbl-cap: The eight most abundant orders, after summing the TPM of all the samples.
-
-t <- tpm %>%
-  inner_join(tax, by = "orf") %>% filter(domain %in% c("Bacteria", "Archaea")) %>%
-  group_by(order, sample) %>%
-  # Sum the abundance of each phylum within a sample
-  summarise(tpm = sum(tpm), .groups = 'drop_last') %>%
-  # Calculate the mean abundance of each phylum over the categories
-  summarise(mean.tpm = sum(tpm), .groups = 'drop') %>%
-  filter(!is.na(order)) %>%
-  top_n(9, mean.tpm)
-
-t %>% arrange(desc(mean.tpm))
-```
-
-
-```{r prepare the taxonomy - order, include=FALSE}
-cols.order <- c( # Sorted on abundance
-  "Pseudomonadales" = "#C7B19C",
-  "Poseidoniales" = "#D69C4E",
-  "Pelagibacterales" = "#972D15",
-  "PS1" = "#FAEFD1",
-  "Flavobacteriales" = "#D8B70A",
-  "Nitrososphaerales" = "#A2A475",
-  "Enterobacterales" = "#00A08A",
-  "SAR86" = "#1B5331",
-  "Rhodobacterales" = "#9986A5",
-  "Other" = "#D5D5D3",
-  "Eukaryotes" = "#046C9A"
-)
-```
-
-@fig-order explores the data by plotting the most abundant orders over all samples, regardless if the RNA transcript was functionally annotated or not. Note that transcripts without a taxonomic annotation (the unidentified fraction in @fig-phylum) are not included in this figure. It clearly shows how the Nitrosphaerales are more abundant in the deeper layer.
-
-```{r}
-#| label: fig-order
-#| fig-cap: Community composition of all RNA transcripts on order level. The orders are sorted according to tpm while grouping low-abundant orders as 'Other'. Transcripts without taxonomic annotation are not included. For each station, the two bars left of the label were sampled at 10 m depth, while the two bars on the right were sampled at chlorophyll max (between 20 and 45 m depth)
-#| out-width: 100%
-
-p.order <- tpm %>%
-  left_join(tax, by = "orf") %>%
-  mutate(order = case_when(
-    order %in% t$order ~ order,
-    domain == "Eukaryota" ~ "Eukaryotes",
-    is.na(order) ~ "Unidentified",
-    !order %in% t$order ~ "Other"
-  )) %>%
-  filter(order != "Unidentified") %>%
-  # Summarize in order to have the sum for each category and topphylum
-  group_by(sample, order) %>% 
-  summarise(tpm = sum(tpm), .groups = 'drop') %>%
-  # Call the plot
-  ggplot(aes(x = sample, 
-             y = tpm, 
-             fill = fct_relevel(order, rev(names(cols.order)))
-             )
-         ) +
-  labs(x = '', y = expression('Relative abundance (tpm '%*% '10'^'6'*')'), fill = "Order") +
-  geom_col() +
-  scale_y_continuous(breaks = c(0, 2e5, 4e5, 6e5, 8e5, 1e6),
-                labels = c("0.0", "0.2", "0.4", "0.6", "0.8", "1.0")
-                ) +
-  scale_fill_manual(values = cols.order) +
-  theme_tidy(legend = "right", fontsize = 5) +
-  #guides(fill = guide_legend(nrow = 3, reverse = TRUE)) +
-  theme(
-    aspect.ratio = 0.75,
-    axis.ticks.x = element_blank(),
-    legend.key.width = unit(3.5, "mm"),
-    legend.key.height = unit(4, "mm"),
-    legend.margin = margin(t = -10),
-    legend.text = element_text(margin = margin(l = 2)),
-    axis.text.x = element_blank()
-    ) +
-  annotate("segment", x =  0.55, xend =  2.45, y = -25000, yend = -25000, color = "#78B7C5") +
-  annotate("segment", x =  2.55, xend =  4.45, y = -25000, yend = -25000, color = "#046C9A") +
-  annotate("segment", x =  4.55, xend =  6.45, y = -25000, yend = -25000, color = "#78B7C5") +
-  annotate("segment", x =  6.55, xend =  8.45, y = -25000, yend = -25000, color = "#046C9A") +
-  annotate("segment", x =  8.55, xend = 10.45, y = -25000, yend = -25000, color = "#78B7C5") +
-  annotate("segment", x = 10.55, xend = 12.45, y = -25000, yend = -25000, color = "#046C9A") +
-  annotate("segment", x = 12.55, xend = 14.45, y = -25000, yend = -25000, color = "#78B7C5") +
-  annotate("segment", x = 14.55, xend = 16.45, y = -25000, yend = -25000, color = "#046C9A") +
-  annotate("segment", x = 16.55, xend = 18.45, y = -25000, yend = -25000, color = "#78B7C5") +
-  annotate("segment", x = 18.55, xend = 20.45, y = -25000, yend = -25000, color = "#046C9A") +
-  annotate("label", x = 2.5, y = -25000, label = "Station 5", label.size = 0, size = 5/.pt) +
-  annotate("label", x = 6.5, y = -25000, label = "26", label.size = 0, size = 5/.pt) +
-  annotate("label", x =10.5, y = -25000, label = "42", label.size = 0, size = 5/.pt) +
-  annotate("label", x =14.5, y = -25000, label = "53", label.size = 0, size = 5/.pt) +
-  annotate("label", x =18.5, y = -25000, label = "56", label.size = 0, size = 5/.pt)
-
-p.order
-```
 
 ## Community composition - genus
 
@@ -578,7 +583,7 @@ p.genus <- tpm %>%
   annotate("segment", x = 14.55, xend = 16.45, y = -30000, yend = -30000, color = "#046C9A") +
   annotate("segment", x = 16.55, xend = 18.45, y = -30000, yend = -30000, color = "#78B7C5") +
   annotate("segment", x = 18.55, xend = 20.45, y = -30000, yend = -30000, color = "#046C9A") +
-  annotate("label", x = 2.5, y = -30000, label = "5", label.size = 0, size = 5/.pt) +
+  annotate("label", x = 2.5, y = -30000, label = "Station 5", label.size = 0, size = 5/.pt) +
   annotate("label", x = 6.5, y = -30000, label = "26", label.size = 0, size = 5/.pt) +
   annotate("label", x =10.5, y = -30000, label = "42", label.size = 0, size = 5/.pt) +
   annotate("label", x =14.5, y = -30000, label = "53", label.size = 0, size = 5/.pt) +
@@ -690,8 +695,7 @@ p.rda <- rda$CCA$wa %>% data.frame() %>% tibble::rownames_to_column('sample') %>
     legend.background = element_rect(fill = NA),
     legend.text = element_text(margin = margin(r = 12, unit = "pt")),
     legend.position = "inside",
-    legend.position.inside  = c(0.89,0.93),
-    aspect.ratio = 1.0
+    legend.position.inside  = c(0.89,0.93)
     )
 
 p.rda
@@ -701,7 +705,7 @@ p.rda
 #| label: fig-nmdstax
 
 (p.order + p.rda) + plot_annotation(tag_levels = "a") & theme(
-  plot.margin = margin(r = 4),
+  plot.margin = margin(r = 2, t = 2),
   plot.tag.location = "panel",
   plot.tag.position = c(0.03, 0.97),
   )
@@ -753,14 +757,14 @@ i <- eggnog %>%
   group_by(cat, station, layer, order) %>% 
   summarise(tpm = sum(tpm), .groups = "drop") %>%
   # Prepare the labels
-  mutate(layer = if_else(layer == '10m', '10 m', 'chl. m')) %>%
+  mutate(layer = if_else(layer == '10m', '10 m', 'chl max.')) %>%
   mutate(layer = paste(station, ' (', layer, ')', sep = '')) %>%
   mutate(layer = factor(layer, levels = 
-                          c('5 (10 m)', '5 (chl. m)', 
-                            '26 (10 m)', '26 (chl. m)', 
-                            '42 (10 m)', '42 (chl. m)',
-                            '53 (10 m)', '53 (chl. m)',
-                            '56 (10 m)', '56 (chl. m)'
+                          c('5 (10 m)', '5 (chl max.)', 
+                            '26 (10 m)', '26 (chl max.)', 
+                            '42 (10 m)', '42 (chl max.)',
+                            '53 (10 m)', '53 (chl max.)',
+                            '56 (10 m)', '56 (chl max.)'
                         )))
 ```
 
@@ -770,18 +774,20 @@ i <- eggnog %>%
 #| label: fig-cog
 
 i %>%
+  mutate(cat = gsub(' \\[[A-Z]\\]', '', cat)) %>%
   ggplot(aes(
     x = tpm,
     y = fct_rev(layer),
     fill = fct_relevel(order, names(cols.order))
   )) +
-  geom_col() + facet_wrap(~ cat, scales = 'free_x') + labs(x = 'Relative abundance (tpm)') +
+  geom_col() + facet_wrap(~ cat, scales = 'free_x') + labs(x = 'Relative abundance (TPM)', fill = 'Order') + 
+  scale_x_continuous(labels = scales::label_comma()) +
   scale_fill_manual(values = cols.order) +
   theme_tidy(fontsize = 5) + 
   theme(
     axis.title.y = element_blank(),
     axis.ticks.y = element_blank(),
-    legend.title = element_blank()
+    legend.key.width = unit(4, 'mm'), legend.key.height = unit(5, 'mm')
   )
 ```
 
@@ -808,7 +814,7 @@ The gene list is from Royo-Llonch et al. [-@royo2021compendium]. It contains the
 ```{r}
 #| label: palette-kos
 
-cols.order <- c( # Sorted on abundance
+cols.ko <- c( # Sorted on abundance
   "Nitrososphaerales" = "#A2A475",
   "Cyanobacteriales" = "#D69C4E",
   "Flavobacteriales" = "#D8B70A",
@@ -820,7 +826,7 @@ cols.order <- c( # Sorted on abundance
   "Pelagibacterales" = "#972D15",
   "PS1" = "#FAEFD1",
   "Other" = "#D5D5D3",
-  "Unidentified" = "#8D8680"
+  "Not annotated" = "#8D8680"
 ) %>% rev()
 ```
 
@@ -828,10 +834,9 @@ cols.order <- c( # Sorted on abundance
 ```{r}
 #| label: read-genelist
 
-k <- read_tsv('data/genelist.tsv', col_types = 'cccc')
+k <- read_tsv('data/genelist.tsv', col_types = 'cccc') %>%
+  filter(pathway != 'Remodelling')
 ```
-
-
 
 
 ```{r}
@@ -839,66 +844,60 @@ k <- read_tsv('data/genelist.tsv', col_types = 'cccc')
 
 kos <- kofam %>% 
   filter(evalue < 1e-3) %>%
-  separate_longer_delim(ko, delim = ",") %>%
   # Use only the KOs from the gene list
-  inner_join(k, by = 'ko', relationship = 'many-to-many') %>%
+  inner_join(k, by = 'ko') %>%
   left_join(tax, by = "orf") %>%
-  replace_na(list("domain" = "Bacteria", "order" = "Unidentified", "phylum" = "Unidentified")) %>%
+  replace_na(list("domain" = "Bacteria", "order" = "Not annotated", "phylum" = "Not annotated")) %>%
   filter(domain %in% c("Bacteria", "Archaea")) %>%
   # Add the tpm for each ORF and add the metadata
-  inner_join(tpm, by = "orf", relationship = 'many-to-many') %>%
+  inner_join(tpm, by = "orf") %>%
   inner_join(meta, by = "sample") %>%
   mutate(
-    order = if_else(order %in% names(cols.order), order, "Other"),
-    order = factor(order, levels = names(cols.order))
+    order = if_else(order %in% names(cols.ko), order, "Other"),
+    order = factor(order, levels = names(cols.ko))
     ) %>%
   # Sum the tpm 
   group_by(pathway, metabolism, layer, order) %>% summarise(tpm = sum(tpm), .groups = "drop")
 ```
 
 
-
 ```{r}
-#| label: fig-fixation
-
-p1 <- kos %>% 
-  filter(metabolism == "C fixation") %>%
-  ggplot(aes(
-    x = tpm, 
-    y = paste(pathway, layer) %>% fct_rev(),
-    fill = order
-    )) +
-  geom_col(show.legend = TRUE) + 
-  scale_fill_manual(values = cols.order, drop = FALSE) +
-  scale_y_discrete(
-    labels = . %>% gsub('.* chlMax', '', .) %>% gsub(' 10m', '', .)
-    ) +
-  labs(x = "", y = "") + 
-  theme_tidy(fontsize = 5) 
-
-p1
+kofam %>% 
+  filter(evalue < 1e-3) %>%
+  # Use only the KOs from the gene list
+  inner_join(k, by = 'ko') %>%
+  left_join(tax, by = "orf") %>%
+  replace_na(list("domain" = "Bacteria", "order" = "Not annotated", "phylum" = "Not annotated")) %>%
+  filter(domain %in% c("Bacteria", "Archaea")) %>%
+  # Add the tpm for each ORF and add the metadata
+  inner_join(tpm, by = "orf") %>%
+  filter(metabolism %in% c('N metabolism','P metabolism','Central C metabolism')) %>%
+  group_by(order) %>% summarise(n = sum(tpm)) %>% slice_max(n, n = 11)
 ```
+
 
 
 ```{r}
 #| label: fig-central-c
 
-p2 <- kos %>% 
+p1 <- kos %>% 
   filter(metabolism == "Central C metabolism") %>%
+  filter(!pathway %in% c('Uronate pathway (udh)','ED pathway (edd)','PRPP biosynthesis (RPPK)')) %>%
   ggplot(aes(
     x = tpm, 
     y = paste(pathway, layer) %>% fct_rev(),
-    fill = fct_relevel(order, names(cols.order))
+    fill = fct_relevel(order, names(cols.ko))
     )) +
   geom_col(show.legend = TRUE) + 
-  scale_fill_manual(values = cols.order, drop = FALSE) +
+  scale_fill_manual(values = cols.ko, drop = FALSE) +
   scale_y_discrete(
     labels = . %>% gsub('.* chlMax', '', .) %>% gsub(' 10m', '', .)
     ) +
-  labs(x = "", y = "") + 
+  scale_x_continuous(labels = scales::label_comma()) +
+  labs(x = "TPM", y = "") + 
   theme_tidy(fontsize = 5)
 
-p2
+p1
 ```
 
 The genes listed below are typically catalyze the rate limiting step of the pathway. Like all other analysis, filtering is done based on the KOs and grouping of the KOs is avoided.
@@ -917,103 +916,50 @@ i <- k %>%
   select(-ko, -ko_definition)
   
 
-p3 <- kos %>% 
+p2 <- kos %>% 
   filter(metabolism == "N metabolism") %>%
   rbind(i) %>%
+  mutate(pathway = if_else(pathway == 'Denitrification', 'Nitrite reductase (nirK)', pathway)) %>%
+  filter(pathway != 'Urea metabolism') %>%
   ggplot(aes(
     x = tpm, 
     y = paste(pathway, layer) %>% fct_rev(),
-    fill = fct_relevel(order, names(cols.order))
+    fill = fct_relevel(order, names(cols.ko))
     )) +
   geom_col(show.legend = TRUE) + 
-  scale_fill_manual(values = cols.order, drop = FALSE) +
+  scale_fill_manual(values = cols.ko, drop = FALSE) +
   scale_y_discrete(
     labels = . %>% gsub('.* chlMax', '', .) %>% gsub(' 10m', '', .)
     ) +
-  labs(x = "", y = "") + 
-  theme_tidy(fontsize = 5) + 
-  theme(
-    axis.ticks.y = element_blank(),
-    aspect.ratio = 1.0
-  )
-
-p3
-```
-
-
-```{r}
-#| label: fig-photosystems
-
-p4 <- kos %>% 
-  filter(metabolism == "Photosystems and ATP") %>%
-  ggplot(aes(
-    x = tpm, 
-    y = fct_rev(pathway),
-    fill = fct_relevel(order, names(cols.order))
-    )) +
-  geom_col(show.legend = TRUE) + 
-  scale_fill_manual(values = cols.order, drop = FALSE) +
-  scale_y_discrete(
-    labels = . %>% gsub('.* chlMax', '', .) %>% gsub(' 10m', '', .)
-    ) +
-  labs(x = "", y = "") + 
+  scale_x_continuous(labels = scales::label_comma()) +
+  labs(x = "TPM", y = "") + 
   theme_tidy(fontsize = 5)
 
-p4
+p2
 ```
 
 
-```{r}
-#| label: fig-s-metabolism
-
-p5 <- kos %>% 
-  filter(metabolism == "S metabolism") %>%
-  ggplot(aes(
-    x = tpm, 
-    y = fct_rev(pathway),
-    fill = fct_relevel(order, names(cols.order))
-    )) +
-  geom_col(show.legend = TRUE) + 
-  scale_fill_manual(values = cols.order, drop = FALSE) +
-  scale_y_discrete(
-    labels = . %>% gsub('.* chlMax', '', .) %>% gsub(' 10m', '', .)
-    ) +
-  labs(x = "", y = "") + 
-  theme_tidy(fontsize = 5) +
-  theme(
-    axis.ticks.y = element_blank(),
-    aspect.ratio = 1.0
-  )
-
-p5
-```
-
 
 ```{r}
-#| fig-p-metabolism
+#| label: fig-p-metabolism
 
-p6 <- kos %>% 
+p3 <- kos %>% 
   filter(metabolism == "P metabolism") %>%
   ggplot(aes(
     x = tpm, 
-    y = fct_rev(pathway),
-    fill = fct_relevel(order, names(cols.order))
+    y = paste(pathway, layer) %>% fct_rev(),
+    fill = fct_relevel(order, names(cols.ko))
     )) +
   geom_col(show.legend = TRUE) + 
-  scale_fill_manual(values = cols.order, drop = FALSE) +
+  scale_fill_manual(values = cols.ko, drop = FALSE) +
   scale_y_discrete(
     labels = . %>% gsub('.* chlMax', '', .) %>% gsub(' 10m', '', .)
     ) +
-  labs(x = "", y = "", fill = "") +
-  theme_tidy(fontsize = 5) +
-  theme(
-    axis.ticks.y = element_blank(),
-    legend.key.width = unit(3.5, "mm"),
-    legend.key.height = unit(4, "mm"),
-    aspect.ratio = 1.0
-  )
+  scale_x_continuous(labels = scales::label_comma()) +
+  labs(x = "TPM", y = "") +
+  theme_tidy(fontsize = 5)
 
-p6
+p3
 ```
 
 
@@ -1024,27 +970,46 @@ p6
 #| label: fig-elements
 #| fig-cap: KO plot
 
-(p1 + p3 + p6) + 
-  plot_annotation(tag_levels = list(c('c', 'd', 'e'))) + 
-  plot_layout(guides = "collect") & guides(fill = guide_legend(reverse = TRUE)) &
+(p1 + p2 + p3) + plot_annotation(tag_levels = list(c('c','d','e'))) + plot_layout(guides = 'collect') &
   theme(
+    axis.ticks.y = element_blank(),
+    legend.position = 'bottom',
     legend.key.height = unit(3.5, "mm"), legend.key.width = unit(2.5, "mm"),
+    legend.text = element_text(margin = margin(l = 2)),
+    legend.margin = margin(t = -2),
     plot.margin = margin(t = 10),
     plot.tag.location = "panel",
     plot.tag.position = c(0.93, 0.95),
-    axis.ticks.y = element_blank(),
-    legend.position = "bottom", legend.title = element_blank(),
-    legend.margin = margin(t = -10), legend.text = element_text(margin = margin(l = 2))
-    )
+    legend.title = element_blank(),
+    aspect.ratio = 1.4,
+    axis.text.y = element_text(margin = margin())
+    ) & guides(fill = guide_legend(reverse = TRUE))
 ```
 
 
 ```{r}
-ggsave("figures/ko-modules.pdf", width = 180, height = 140, units = "mm")
+ggsave("figures/ko-modules.pdf", width = 180, height = 160, units = "mm")
 ```
 
 
 # Linking metat to morphology (SEM)
+
+```{r}
+cols.order <- c( # Sorted on abundance
+  "Pseudomonadales" = "#C7B19C",
+  "Pelagibacterales" = "#972D15",
+  "SAR324" = "#D69C4E",
+  "Marinisomatales" = "#046C9A",
+  "Puniceispirillales_A" = "#9986A5",
+  "PS1" = "#FAEFD1",
+  "Rhodobacterales" = "#00A08A",
+  "SAR86" = "#D5D5D3",
+  "Burkholderiales" = "#78B7C5",
+  "UBA8366" = "#A2A475",
+  "Flavobacteriales" = "#D8B70A",
+  "Other" = "#D5D5D3"
+) %>% rev()
+```
 
 
 ```{r}
@@ -1076,26 +1041,6 @@ kos %>%
 ```
 
 
-
-
-```{r}
-cols.order <- c( # Sorted on abundance
-  "Pseudomonadales" = "#C7B19C",
-  "Pelagibacterales" = "#972D15",
-  "SAR324" = "#D69C4E",
-  "Marinisomatales" = "#046C9A",
-  "Puniceispirillales_A" = "#9986A5",
-  "PS1" = "#FAEFD1",
-  "Rhodobacterales" = "#00A08A",
-  "SAR86" = "#D5D5D3",
-  "Burkholderiales" = "#78B7C5",
-  "UBA8366" = "#A2A475",
-  "Flavobacteriales" = "#D8B70A",
-  "Other" = "#D5D5D3"
-) %>% rev()
-```
-
-
 ```{r}
 lab <- kos %>%
   filter(category == "EPS biosynthesis") %>%
@@ -1116,6 +1061,7 @@ p1 <- kos %>%
   scale_fill_manual(values = cols.order, drop = FALSE) +
   labs(x = "Relative abundance (tpm)", y = "") + 
   theme_tidy(legend = "right", fontsize = 5) +
+  scale_x_continuous(labels = scales::label_comma()) +
   scale_y_discrete(labels = lab) +
   guides(fill = guide_legend(reverse = TRUE)) +
   theme(
@@ -1150,6 +1096,7 @@ p2 <- kos %>%
   labs(x = "Relative abundance (tpm)", y = "") + 
   scale_y_discrete(labels = lab) +
   theme_tidy(legend = "right", fontsize = 5) +
+  scale_x_continuous(labels = scales::label_comma()) +
   guides(fill = guide_legend(reverse = TRUE)) +
   theme(
     legend.title = element_blank(),
@@ -1184,6 +1131,7 @@ p3 <- kos %>%
   theme_tidy(legend = "right", fontsize = 5) +
   guides(fill = guide_legend(reverse = TRUE)) +
   scale_y_discrete(labels = lab) +
+  scale_x_continuous(labels = scales::label_comma()) +
   theme(
     legend.title = element_blank(),
     axis.ticks.y = element_blank(),
@@ -1243,6 +1191,7 @@ px <- d %>%
   geom_col(show.legend = TRUE, width = 0.8) + 
   scale_fill_manual(values = cols.order, drop = FALSE) +
   scale_y_discrete(labels = lab) +
+  scale_x_continuous(labels = scales::label_comma()) +
   labs(x = "Relative abundance (tpm)", y = "", fill = "") + 
   theme_tidy(fontsize = 5, legend = "right") +
   guides(fill = guide_legend(reverse = T)) +
@@ -1278,6 +1227,7 @@ py <- d %>%
   geom_col(show.legend = TRUE, width = 0.8) + 
   scale_fill_manual(values = cols.order, drop = FALSE) +
   scale_y_discrete(labels = lab) +
+  scale_x_continuous(labels = scales::label_comma()) +
   labs(x = "Relative abundance (tpm)", y = "", fill = "") + 
   theme_tidy(fontsize = 5, legend = "right") +
   guides(fill = guide_legend(reverse = T)) +
@@ -1312,6 +1262,7 @@ pz <- d %>%
     )) +
   geom_col(show.legend = TRUE, width = 0.8) + 
   scale_fill_manual(values = cols.order, drop = FALSE) +
+  scale_x_continuous(labels = scales::label_comma()) +
   scale_y_discrete(labels = lab) +
   labs(x = "Relative abundance (tpm)", y = "", fill = "") + 
   theme_tidy(fontsize = 5, legend = "right") +

@@ -53,6 +53,7 @@ library(grateful)
 #| include: false
 
 source("../Protocols/theme.R")
+
 knitr::opts_chunk$set(cache = FALSE)
 ```
 
@@ -65,6 +66,18 @@ knitr::opts_chunk$set(cache = FALSE)
 cite_packages(output = "table", pkgs = "Session", out.dir = getwd())
 ```
 
+
+```{r}
+#| label: define-colors
+
+cols.layer <- c(
+  "10m" = "#78B7C5",
+  "chlMax" = "#046C9A"
+)
+```
+
+
+
 # Read input files RNA
 
 The raw data was procesesd using nf-core/metatdenovo (v1.0.1): https://nf-co.re/metatdenovo/1.0.1/ using Prokka as orf caller, GTDB release 220 for taxonomic annotation, and EggNOG mapper for functional annotation.
@@ -72,64 +85,8 @@ The raw data was procesesd using nf-core/metatdenovo (v1.0.1): https://nf-co.re/
 ```{r}
 #| label: metatdenovo-gtdb
 
-gtdb <- read_tsv("data/metatdenovo/user_assembly.prokka.gtdb-r220.diamond.taxonomy.tsv.gz", show_col_types = F) %>%
-  select(-strain,-taxonomy) %>%
-  filter(!is.na(phylum))
-
-# The GTDB metadata 'md' is to join the NCBI with the GTDB taxonomy
-pro <- read_tsv("data/metatdenovo/user_assembly.prokka.ncbi-refseq-20250115.diamond.taxonomy-taxdump.tsv.gz", show_col_types = F) %>%
-  filter(superkingdom %in% c("Bacteria", "Archaea")) %>%
-  select(orf, evalue, taxid) %>%
-  filter(!orf %in% gtdb$orf) 
-
-md <- read_tsv("./data/magmap/ar53_metadata_r226.tsv.gz", show_col_types = F)
-md <- read_tsv("./data/magmap/bac120_metadata_r226.tsv.gz", show_col_types = F) %>% rbind(md)
-
-pro <- md %>% 
-  filter(gtdb_representative) %>%
-  select(taxid = ncbi_taxid, gtdb_taxonomy) %>%
-  filter(taxid %in% pro$taxid) %>%
-  separate_wider_delim(gtdb_taxonomy, delim = ";", names = c("domain", "phylum", "class", "order", "family", "genus", "species")) %>%
-  mutate(species = NA) %>%
-  mutate(across(-1, \(x) gsub(x, pattern = "[a-z]__", replacement = ""))) %>%
-  mutate(genus = gsub("_[A-Z]", "", genus)) %>%
-  distinct() %>%
-  group_by(taxid) %>% slice_sample(n = 1) %>% ungroup() %>%
-  inner_join(pro, ., by = "taxid")
-
-euk <- read_tsv("data/metatdenovo/user_assembly.prokka.ncbi-refseq-20250115.diamond.taxonomy-taxdump.tsv.gz", show_col_types = F) %>%
-  filter(superkingdom == "Eukaryota" | superkingdom == "Viruses") %>%
-  select(-taxonomy) %>%
-  select(orf, taxid, evalue, domain = superkingdom, phylum, class, order, family, genus, species)
-
-# Identify ORFs that are identified as prokaryotes with GTDB but eukaryotes according to NCBI
-orfs <- gtdb %>%
-  select(orf, gtdb.evalue = evalue) %>%
-  inner_join(euk, by = "orf") %>%
-  filter(evalue > gtdb.evalue) %>%
-  pull(orf)
-
-# Merge into one object: 
-tax <- gtdb %>%
-  filter(!orf %in% orfs) %>%
-  rbind(pro) %>%
-  rbind(euk %>% filter(!orf %in% gtdb$orf)) %>%
-  select(-taxid, -evalue)
-
-remove(md, orfs, pro)
+tax <- read_tsv('data/metatdenovo/gtdb_ncbi_merged.tsv.gz', col_types = 'cccccccc')
 ```
-
-
-```{r}
-
-# Add the output of running Diamond again Prokka-annotated genomes
-tax <- read_tsv('data/n.tsv', col_names = F, col_types = 'cc') %>%
-  rename(orf = 1, tax = 2) %>% 
-  separate(tax, into = c('domain','phylum','class','order','family','genus','species'), sep = ';') %>% 
-  mutate(across(-1, \(x) gsub(pattern = '[a-z]__', replacement = '',x))) %>%
-  rbind(tax)
-```
-
 
 
 ```{r}
@@ -621,7 +578,7 @@ hydro <- readxl::read_excel("data/primarydata.xlsx", sheet = 1) %>%
 
 
 ```{r}
-hellinger <- tpm %>%
+m <- tpm %>%
   inner_join(kofam, by = "orf") %>% group_by(sample, ko) %>% summarise(tpm = sum(tpm), .groups = "drop") %>%
   # Standard Vegan transformation: Turn table with with samples as *rows*
   select(sample, ko, tpm) %>%
@@ -1282,7 +1239,7 @@ pz
 #| fig-cap: KO plot
 
 (p1 + p2 + p3) / (px + py + pz) + 
-  plot_annotation(tag_levels = list(c('A: EPS biosynthesis', 'B: Vesicle formation', 'C: External appendages\nand membrane extensions','D: Defense system', 'E: Osmoregulation', 'F: DNA repair and recombination'))) + 
+  plot_annotation(tag_levels = list(c('a: EPS biosynthesis', 'b: Vesicle formation', 'c: External appendages\nand membrane extensions','d: Defense system', 'e: Osmoregulation', 'f: DNA repair and recombination'))) + 
   plot_layout(guides = "collect") & guides(fill = guide_legend(reverse = TRUE)) &
   theme(
     legend.key.height = unit(3.5, "mm"), legend.key.width = unit(2.5, "mm"),

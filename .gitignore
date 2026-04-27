@@ -3,7 +3,7 @@
 .RData
 .Ruserdata
 .DS_Store
-data
+data/metatdenovo
 sas_files
 sas-metat_cache
 sas-metat_files

@@ -1,0 +1,27 @@
+cat	cog_category
+Amino acid transport and metabolism [E]	E
+Carbohydrate transport and metabolism [G]	G
+Cell cycle control, cell division, chromosome partitioning [D]	D
+Cell Motility [N]	N
+Cell wall/membrane/envelope biogenesis [M]	M
+Chromatin structure and dynamics [B]	B
+Coenzyme transport and metabolism [H]	H
+Cytoskeleton [Z]	Z
+Defense mechanisms [V]	V
+Energy production and conversion [C]	C
+Extracellular structures [W]	W
+Function unknown [S]	S
+General function prediction only [R]	R
+Inorganic ion transport and metabolism [P]	P
+Intracellular trafficking, secretion, and vesicular transport [U]	U
+Lipid transport and metabolism [I]	I
+Mobilome: prophages, transposons [X]	X
+Nuclear structure [Y]	Y
+Nucleotide transport and metabolism [F]	F
+Posttranslational modification, protein turnover, chaperones [O]	O
+RNA processing and modification [A]	A
+Replication, recombination and repair [L]	L
+Secondary metabolites biosynthesis, transport and catabolism [Q]	Q
+Signal transduction mechanisms [T]	T
+Transcription [K]	K
+Translation, ribosomal structure and biogenesis [J]	J

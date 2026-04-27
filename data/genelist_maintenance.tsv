@@ -1,0 +1,404 @@
+ko	gene	process	category	subcategory
+K02002	glycine betaine/proline transport system substrate-binding protein	Glycine betaine/proline transport system	Osmoregulation	Glycine betaine/proline transport system
+K02000	glycine betaine/proline transport system ATP-binding protein [EC:7.6.2.9]	Glycine betaine/proline ATP binding	Osmoregulation	Glycine betaine/proline ATP binding
+K03316	monovalent cation:H+ antiporter, CPA1 family	Osmoregulation Na+ H+ antiporter	Osmoregulation	Osmoregulation Na+ H+ antiporter
+K02001	glycine betaine/proline transport system permease protein	Glycine betaine/proline transport system	Osmoregulation	Glycine betaine/proline transport system
+K03307	solute:Na+ symporter, SSS family	Osmoregulated proline transporter	Osmoregulation	Osmoregulated proline transporter
+K05571	multicomponent Na+:H+ antiporter subunit G	Osmoregulation Na+ H+ antiporter	Osmoregulation	Osmoregulation Na+ H+ antiporter
+K09476	outer membrane pore protein F	Outer membrane pore protein	Osmoregulation	Outer membrane pore protein
+K05846	osmoprotectant transport system permease protein	Osmoprotectant	Osmoregulation	Osmoprotectant
+K11928	sodium/proline symporter	Sodium/proline symporter	Osmoregulation	Sodium/proline symporter
+K03313	Na+:H+ antiporter, NhaA family	Osmoregulation Na+ H+ antiporter	Osmoregulation	Osmoregulation Na+ H+ antiporter
+K05568	multicomponent Na+:H+ antiporter subunit D	Osmoregulation Na+ H+ antiporter	Osmoregulation	Osmoregulation Na+ H+ antiporter
+K05565	multicomponent Na+:H+ antiporter subunit A	Osmoregulation Na+ H+ antiporter	Osmoregulation	Osmoregulation Na+ H+ antiporter
+K09475	outer membrane pore protein C	Outer membrane pore protein	Osmoregulation	Outer membrane pore protein
+K01547	potassium-transporting ATPase ATP-binding subunit [EC:7.2.2.6]	Potassium-transporting ATPase	Osmoregulation	Potassium-transporting ATPase
+K00567	ogt, MGMT	SSBR (single strand breaks repair)_Direct repair	DNA repair and recombination	SSBR
+K10778	ada	SSBR (single strand breaks repair)_Direct repair	DNA repair and recombination	SSBR
+K13530	adaA	SSBR (single strand breaks repair)_Direct repair	DNA repair and recombination	SSBR
+K13531	adaB	SSBR (single strand breaks repair)_Direct repair	DNA repair and recombination	SSBR
+K01669	phr, PHR1	SSBR (single strand breaks repair)_Direct repair	DNA repair and recombination	SSBR
+K06876	phrB	SSBR (single strand breaks repair)_Direct repair	DNA repair and recombination	SSBR
+K03919	alkB	SSBR (single strand breaks repair)_Direct repair	DNA repair and recombination	SSBR
+K03648	UNG, UDG	BER (base excision repair)_DNA glycosylases	DNA repair and recombination	BER
+K03649	mug	BER (base excision repair)_DNA glycosylases	DNA repair and recombination	BER
+K10800	SMUG1	BER (base excision repair)_DNA glycosylases	DNA repair and recombination	BER
+K21929	udg	BER (base excision repair)_DNA glycosylases	DNA repair and recombination	BER
+K01247	alkA	BER (base excision repair)_DNA glycosylases	DNA repair and recombination	BER
+K13529	ada_alkA	BER (base excision repair)_DNA glycosylases	DNA repair and recombination	BER
+K03652	MPG	BER (base excision repair)_DNA glycosylases	DNA repair and recombination	BER
+K03575	mutY	BER (base excision repair)_DNA glycosylases	DNA repair and recombination	BER
+K01246	tag	BER (base excision repair)_DNA glycosylases	DNA repair and recombination	BER
+K10563	mutM, fpg	BER (base excision repair)_DNA glycosylases	DNA repair and recombination	BER
+K05522	nei	BER (base excision repair)_DNA glycosylases	DNA repair and recombination	BER
+K10773	NTHL1, nth	BER (base excision repair)_DNA glycosylases	DNA repair and recombination	BER
+K01142	xthA, xth	BER (base excision repair)_AP endonucleases	DNA repair and recombination	BER
+K01151	nfo	BER (base excision repair)_AP endonucleases	DNA repair and recombination	BER
+K05982	nfi	BER (base excision repair)_AP endonucleases	DNA repair and recombination	BER
+K09120	dU	BER (base excision repair)_AP endonucleases	DNA repair and recombination	BER
+K07462	recJ	BER (base excision repair)_RecJ	DNA repair and recombination	BER
+K01972	ligA, ligB	BER (base excision repair)_DNA ligase	DNA repair and recombination	BER
+K02335	polA	BER (base excision repair)_DNA polymerase I	DNA repair and recombination	BER
+K03701	uvrA	NER (nucleotide excision repair)_GGR (global genome repair)	DNA repair and recombination	NER
+K03702	uvrB	NER (nucleotide excision repair)_GGR (global genome repair)	DNA repair and recombination	NER
+K03703	uvrC	NER (nucleotide excision repair)_GGR (global genome repair)	DNA repair and recombination	NER
+K05984	cho	NER (nucleotide excision repair)_GGR (global genome repair)	DNA repair and recombination	NER
+K03657	uvrD, pcrA	NER (nucleotide excision repair)_GGR (global genome repair)	DNA repair and recombination	NER
+K02335	polA	NER (nucleotide excision repair)_GGR (global genome repair)	DNA repair and recombination	NER
+K01972	ligA, ligB	NER (nucleotide excision repair)_GGR (global genome repair)	DNA repair and recombination	NER
+K03043	rpoB	NER (nucleotide excision repair)_TCR (transcription coupled repair)	DNA repair and recombination	NER
+K03046	rpoC	NER (nucleotide excision repair)_TCR (transcription coupled repair)	DNA repair and recombination	NER
+K13797	rpoBC	NER (nucleotide excision repair)_TCR (transcription coupled repair)	DNA repair and recombination	NER
+K03040	rpoA	NER (nucleotide excision repair)_TCR (transcription coupled repair)	DNA repair and recombination	NER
+K03048	rpoE	NER (nucleotide excision repair)_TCR (transcription coupled repair)	DNA repair and recombination	NER
+K03060	rpoZ	NER (nucleotide excision repair)_TCR (transcription coupled repair)	DNA repair and recombination	NER
+K03723	mfd	NER (nucleotide excision repair)_TRCF	DNA repair and recombination	NER
+K03555	mutS	MMR (mismatch excision repair)_Mismatch and loop recognition	DNA repair and recombination	MMR
+K07456	mutS2	MMR (mismatch excision repair)_Mismatch and loop recognition	DNA repair and recombination	MMR
+K03572	mutL	MMR (mismatch excision repair)_Molecular matchmaker	DNA repair and recombination	MMR
+K03573	mutH	MMR (mismatch excision repair)_Strand discrimination	DNA repair and recombination	MMR
+K01141	sbcB, exoI	MMR (mismatch excision repair)_DNA exonucleases	DNA repair and recombination	MMR
+K03601	xseA	MMR (mismatch excision repair)_DNA exonucleases	DNA repair and recombination	MMR
+K03602	xseB	MMR (mismatch excision repair)_DNA exonucleases	DNA repair and recombination	MMR
+K10857	exoX	MMR (mismatch excision repair)_DNA exonucleases	DNA repair and recombination	MMR
+K02337	dnaE	MMR (mismatch excision repair)_DNA pol III holoenzyme	DNA repair and recombination	MMR
+K03763	polC	MMR (mismatch excision repair)_DNA pol III holoenzyme	DNA repair and recombination	MMR
+K02338	dnaN	MMR (mismatch excision repair)_DNA pol III holoenzyme	DNA repair and recombination	MMR
+K02339	holC	MMR (mismatch excision repair)_DNA pol III holoenzyme	DNA repair and recombination	MMR
+K02340	holA	MMR (mismatch excision repair)_DNA pol III holoenzyme	DNA repair and recombination	MMR
+K02341	holB	MMR (mismatch excision repair)_DNA pol III holoenzyme	DNA repair and recombination	MMR
+K02342	dnaQ	MMR (mismatch excision repair)_DNA pol III holoenzyme	DNA repair and recombination	MMR
+K14159	rnhA_dnaQ	MMR (mismatch excision repair)_DNA pol III holoenzyme	DNA repair and recombination	MMR
+K02343	dnaX	MMR (mismatch excision repair)_DNA pol III holoenzyme	DNA repair and recombination	MMR
+K02344	holD	MMR (mismatch excision repair)_DNA pol III holoenzyme	DNA repair and recombination	MMR
+K02345	holE	MMR (mismatch excision repair)_DNA pol III holoenzyme	DNA repair and recombination	MMR
+K01972	ligA, ligB	MMR (mismatch excision repair)_DNA ligase	DNA repair and recombination	MMR
+K03657	uvrD, pcrA	MMR (mismatch excision repair)_Other MMR factors	DNA repair and recombination	MMR
+K03111	ssb	MMR (mismatch excision repair)_Other MMR factors	DNA repair and recombination	MMR
+K06223	dam	MMR (mismatch excision repair)_Other MMR factors	DNA repair and recombination	MMR
+K07458	vsr	MMR (mismatch excision repair)_Other MMR factors	DNA repair and recombination	MMR
+K03582	recB	DSBR (double strand breaks repair)_HR _ RecBC pathway	DNA repair and recombination	DSBR
+K03583	recC	DSBR (double strand breaks repair)_HR _ RecBC pathway	DNA repair and recombination	DSBR
+K03581	recD	DSBR (double strand breaks repair)_HR _ RecBC pathway	DNA repair and recombination	DSBR
+K03553	recA	DSBR (double strand breaks repair)_HR _ RecBC pathway	DNA repair and recombination	DSBR
+K03550	ruvA	DSBR (double strand breaks repair)_HR _ RecBC pathway	DNA repair and recombination	DSBR
+K03551	ruvB	DSBR (double strand breaks repair)_HR _ RecBC pathway	DNA repair and recombination	DSBR
+K01159	ruvC	DSBR (double strand breaks repair)_HR _ RecBC pathway	DNA repair and recombination	DSBR
+K01160	rusA	DSBR (double strand breaks repair)_HR _ RecBC pathway	DNA repair and recombination	DSBR
+K04066	priA	DSBR (double strand breaks repair)_HR _ RecBC pathway	DNA repair and recombination	DSBR
+K02686	priB	DSBR (double strand breaks repair)_HR _ RecBC pathway	DNA repair and recombination	DSBR
+K04067	priC	DSBR (double strand breaks repair)_HR _ RecBC pathway	DNA repair and recombination	DSBR
+K02317	dnaT	DSBR (double strand breaks repair)_HR _ RecBC pathway	DNA repair and recombination	DSBR
+K01141	sbcB, exoI	DSBR (double strand breaks repair)_HR _ RecBC pathway	DNA repair and recombination	DSBR
+K03546	sbcC, rad50	DSBR (double strand breaks repair)_HR _ RecBC pathway	DNA repair and recombination	DSBR
+K03547	sbcD, mre11	DSBR (double strand breaks repair)_HR _ RecBC pathway	DNA repair and recombination	DSBR
+K03553	recA	DSBR (double strand breaks repair)_HR _ RecFOR pathway	DNA repair and recombination	DSBR
+K04485	radA, sms	DSBR (double strand breaks repair)_HR _ RecFOR pathway	DNA repair and recombination	DSBR
+K03629	recF	DSBR (double strand breaks repair)_HR _ RecFOR pathway	DNA repair and recombination	DSBR
+K03655	recG	DSBR (double strand breaks repair)_HR _ RecFOR pathway	DNA repair and recombination	DSBR
+K07462	recJ	DSBR (double strand breaks repair)_HR _ RecFOR pathway	DNA repair and recombination	DSBR
+K03584	recO	DSBR (double strand breaks repair)_HR _ RecFOR pathway	DNA repair and recombination	DSBR
+K06187	recR	DSBR (double strand breaks repair)_HR _ RecFOR pathway	DNA repair and recombination	DSBR
+K03631	recN	DSBR (double strand breaks repair)_HR _ RecFOR pathway	DNA repair and recombination	DSBR
+K03700	recU	DSBR (double strand breaks repair)_HR _ RecFOR pathway	DNA repair and recombination	DSBR
+K03554	rdgC	DSBR (double strand breaks repair)_HR _ RecFOR pathway	DNA repair and recombination	DSBR
+K03550	ruvA	DSBR (double strand breaks repair)_HR _ RecFOR pathway	DNA repair and recombination	DSBR
+K03551	ruvB	DSBR (double strand breaks repair)_HR _ RecFOR pathway	DNA repair and recombination	DSBR
+K01159	ruvC	DSBR (double strand breaks repair)_HR _ RecFOR pathway	DNA repair and recombination	DSBR
+K16898	addA	DSBR (double strand breaks repair)_HR _ AddAB pathway	DNA repair and recombination	DSBR
+K16899	addB	DSBR (double strand breaks repair)_HR _ AddAB pathway	DNA repair and recombination	DSBR
+K15342	cas1	DSBR (double strand breaks repair)_HR _ Other	DNA repair and recombination	DSBR
+K19789	radD	DSBR (double strand breaks repair)_HR _ Other	DNA repair and recombination	DSBR
+K04483	radA	DSBR (double strand breaks repair)_HR _ Archaeal homologous recombination	DNA repair and recombination	DSBR
+K04484	radB	DSBR (double strand breaks repair)_HR _ Archaeal homologous recombination	DNA repair and recombination	DSBR
+K03552	hjr, hjc, hje	DSBR (double strand breaks repair)_HR _ Archaeal homologous recombination	DNA repair and recombination	DSBR
+K03546	sbcC, rad50	DSBR (double strand breaks repair)_HR _ Archaeal homologous recombination	DNA repair and recombination	DSBR
+K03547	sbcD, mre11	DSBR (double strand breaks repair)_HR _ Archaeal homologous recombination	DNA repair and recombination	DSBR
+K06915	herA	DSBR (double strand breaks repair)_HR _ Archaeal homologous recombination	DNA repair and recombination	DSBR
+K25510	nurA	DSBR (double strand breaks repair)_HR _ Archaeal homologous recombination	DNA repair and recombination	DSBR
+K03726	helS	DSBR (double strand breaks repair)_HR _ Archaeal homologous recombination	DNA repair and recombination	DSBR
+K10979	ku	DSBR (double strand breaks repair)_NHEJ	DNA repair and recombination	DSBR
+K01971	ligD	DSBR (double strand breaks repair)_NHEJ	DNA repair and recombination	DSBR
+K02346	dinB	DSBR (double strand breaks repair)_TLS _ Y_family DNA polymerases	DNA repair and recombination	DSBR
+K03502	umuC	DSBR (double strand breaks repair)_TLS _ Y_family DNA polymerases	DNA repair and recombination	DSBR
+K03503	umuD	DSBR (double strand breaks repair)_TLS _ Y_family DNA polymerases	DNA repair and recombination	DSBR
+K04479	dbh	DSBR (double strand breaks repair)_TLS _ Y_family DNA polymerases	DNA repair and recombination	DSBR
+K03553	recA	DSBR (double strand breaks repair)_TLS _ SOS response	DNA repair and recombination	DSBR
+K01356	lexA	DSBR (double strand breaks repair)_TLS _ SOS response	DNA repair and recombination	DSBR
+K03631	recN	DSBR (double strand breaks repair)_TLS _ SOS response	DNA repair and recombination	DSBR
+K02336	polB	DSBR (double strand breaks repair)_TLS _ SOS response	DNA repair and recombination	DSBR
+K14160	imuA	DSBR (double strand breaks repair)_TLS _ SOS response	DNA repair and recombination	DSBR
+K14161	imuB	DSBR (double strand breaks repair)_TLS _ SOS response	DNA repair and recombination	DSBR
+K14162	dnaE2	DSBR (double strand breaks repair)_TLS _ SOS response	DNA repair and recombination	DSBR
+K03111	ssb	DSBR (double strand breaks repair)_TLS _ SOS response	DNA repair and recombination	DSBR
+K14623	dinD	DSBR (double strand breaks repair)_TLS _ SOS response	DNA repair and recombination	DSBR
+K12149	dinI	DSBR (double strand breaks repair)_TLS _ SOS response	DNA repair and recombination	DSBR
+K03565	recX	DSBR (double strand breaks repair)_TLS _ SOS response	DNA repair and recombination	DSBR
+K01157	rpnA	DSBR (double strand breaks repair)_TLS _ SOS response	DNA repair and recombination	DSBR
+K24087	rpnB	DSBR (double strand breaks repair)_TLS _ SOS response	DNA repair and recombination	DSBR
+K24088	rpnC	DSBR (double strand breaks repair)_TLS _ SOS response	DNA repair and recombination	DSBR
+K24089	rpnD	DSBR (double strand breaks repair)_TLS _ SOS response	DNA repair and recombination	DSBR
+K24090	rpnE	DSBR (double strand breaks repair)_TLS _ SOS response	DNA repair and recombination	DSBR
+K02347	polX, dpx	DSBR (double strand breaks repair)_Other DNA polymerase	DNA repair and recombination	DSBR
+K03656	rep	DSBR (double strand breaks repair)_Other DNA helicases	DNA repair and recombination	DSBR
+K03658	helD	DSBR (double strand breaks repair)_Other DNA helicases	DNA repair and recombination	DSBR
+K03722	dinG	DSBR (double strand breaks repair)_Other DNA helicases	DNA repair and recombination	DSBR
+K03724	lhr	DSBR (double strand breaks repair)_Other DNA helicases	DNA repair and recombination	DSBR
+K03574	mutT, NUDT15, MTH2	DSBR (double strand breaks repair)_Other nucleotide pool modulators	DNA repair and recombination	DSBR
+K23258	mutT1	DSBR (double strand breaks repair)_Other nucleotide pool modulators	DNA repair and recombination	DSBR
+K01554	K01554	DSBR (double strand breaks repair)_Other nucleotide pool modulators	DNA repair and recombination	DSBR
+K01520	dut, DUT	DSBR (double strand breaks repair)_Other nucleotide pool modulators	DNA repair and recombination	DSBR
+K00525	nrdA, nrdE	DSBR (double strand breaks repair)_Other nucleotide pool modulators	DNA repair and recombination	DSBR
+K00526	nrdB, nrdF	DSBR (double strand breaks repair)_Other nucleotide pool modulators	DNA repair and recombination	DSBR
+K06881	nrnA	DSBR (double strand breaks repair)_Other factors	DNA repair and recombination	DSBR
+K22585	nreA	DSBR (double strand breaks repair)_Other factors	DNA repair and recombination	DSBR
+K28130	cc1	DSBR (double strand breaks repair)_Other factors	DNA repair and recombination	DSBR
+K15342	cas1	CRISPR-Cas: Universal Cas proteins	Defense system	CRISPR-Cas
+K09951	cas2	CRISPR-Cas: Universal Cas proteins	Defense system	CRISPR-Cas
+K07012	cas3	CRISPR-Cas: Type I_Signature	Defense system	CRISPR-Cas
+K07475	cas3 (Cas3-HD)	CRISPR-Cas: Type I_Signature	Defense system	CRISPR-Cas
+K19085	csa1	CRISPR-Cas: Subtype I-A	Defense system	CRISPR-Cas
+K19074	csa2	CRISPR-Cas: Subtype I-A	Defense system	CRISPR-Cas
+K07725	csa3	CRISPR-Cas: Subtype I-A	Defense system	CRISPR-Cas
+K19086	csa4, cas8a2	CRISPR-Cas: Subtype I-A	Defense system	CRISPR-Cas
+K19087	csa5	CRISPR-Cas: Subtype I-A	Defense system	CRISPR-Cas
+K19088	cst1, cas8a	CRISPR-Cas: Subtype I-A	Defense system	CRISPR-Cas
+K19075	cst2, cas7	CRISPR-Cas: Subtype I-A	Defense system	CRISPR-Cas
+K07464	cas4	CRISPR-Cas: Subtype I-A	Defense system	CRISPR-Cas
+K19089	cas5a_b_c	CRISPR-Cas: Subtype I-A	Defense system	CRISPR-Cas
+K19090	cas5t	CRISPR-Cas: Subtype I-A	Defense system	CRISPR-Cas
+K19091	cas6	CRISPR-Cas: Subtype I-A	Defense system	CRISPR-Cas
+K19114	csh1	CRISPR-Cas: Subtype I-B	Defense system	CRISPR-Cas
+K19115	csh2	CRISPR-Cas: Subtype I-B	Defense system	CRISPR-Cas
+K07464	cas4	CRISPR-Cas: Subtype I-B	Defense system	CRISPR-Cas
+K19116	cas5h	CRISPR-Cas: Subtype I-B	Defense system	CRISPR-Cas
+K19117	csd1, cas8c	CRISPR-Cas: Subtype I-C	Defense system	CRISPR-Cas
+K19118	csd2, cas7	CRISPR-Cas: Subtype I-C	Defense system	CRISPR-Cas
+K07464	cas4	CRISPR-Cas: Subtype I-C	Defense system	CRISPR-Cas
+K19119	cas5d	CRISPR-Cas: Subtype I-C	Defense system	CRISPR-Cas
+K19120	csc1	CRISPR-Cas: Subtype I-D	Defense system	CRISPR-Cas
+K19121	csc2	CRISPR-Cas: Subtype I-D	Defense system	CRISPR-Cas
+K19122	csc3	CRISPR-Cas: Subtype I-D	Defense system	CRISPR-Cas
+K07464	cas4	CRISPR-Cas: Subtype I-D	Defense system	CRISPR-Cas
+K19091	cas6	CRISPR-Cas: Subtype I-D	Defense system	CRISPR-Cas
+K19123	casA, cse1	CRISPR-Cas: Subtype I-E	Defense system	CRISPR-Cas
+K19046	casB, cse2	CRISPR-Cas: Subtype I-E	Defense system	CRISPR-Cas
+K19124	casC, cse4	CRISPR-Cas: Subtype I-E	Defense system	CRISPR-Cas
+K19125	casD, cse5	CRISPR-Cas: Subtype I-E	Defense system	CRISPR-Cas
+K19126	casE, cse3	CRISPR-Cas: Subtype I-E	Defense system	CRISPR-Cas
+K19127	csy1	CRISPR-Cas: Subtype I-F	Defense system	CRISPR-Cas
+K19128	csy2	CRISPR-Cas: Subtype I-F	Defense system	CRISPR-Cas
+K19129	csy3	CRISPR-Cas: Subtype I-F	Defense system	CRISPR-Cas
+K19130	csy4, cas6f	CRISPR-Cas: Subtype I-F	Defense system	CRISPR-Cas
+K19131	csb1	CRISPR-Cas: Subtype I-U	Defense system	CRISPR-Cas
+K19132	csb2	CRISPR-Cas: Subtype I-U	Defense system	CRISPR-Cas
+K19133	csb3	CRISPR-Cas: Subtype I-U	Defense system	CRISPR-Cas
+K19134	csx10	CRISPR-Cas: Subtype I-U	Defense system	CRISPR-Cas
+K19135	csx14	CRISPR-Cas: Subtype I-U	Defense system	CRISPR-Cas
+K19136	csx17	CRISPR-Cas: Subtype I-U	Defense system	CRISPR-Cas
+K09952	cas9, csn1	CRISPR-Cas: Type II_Signature	Defense system	CRISPR-Cas
+K19137	csn2	CRISPR-Cas: Subtype II-A	Defense system	CRISPR-Cas
+K07464	cas4	CRISPR-Cas: Subtype II-B	Defense system	CRISPR-Cas
+K07016	csm1, cas10	CRISPR-Cas: Type III_Signature	Defense system	CRISPR-Cas
+K19138	csm2	CRISPR-Cas: Subtype III-A	Defense system	CRISPR-Cas
+K09002	csm3	CRISPR-Cas: Subtype III-A	Defense system	CRISPR-Cas
+K19139	csm4	CRISPR-Cas: Subtype III-A	Defense system	CRISPR-Cas
+K19140	csm5	CRISPR-Cas: Subtype III-A	Defense system	CRISPR-Cas
+K07061	cmr1	CRISPR-Cas: Subtype III-B	Defense system	CRISPR-Cas
+K19076	cmr2, cas10	CRISPR-Cas: Subtype III-B	Defense system	CRISPR-Cas
+K09127	cmr3	CRISPR-Cas: Subtype III-B	Defense system	CRISPR-Cas
+K09000	cmr4	CRISPR-Cas: Subtype III-B	Defense system	CRISPR-Cas
+K19141	cmr5	CRISPR-Cas: Subtype III-B	Defense system	CRISPR-Cas
+K19142	cmr6	CRISPR-Cas: Subtype III-B	Defense system	CRISPR-Cas
+K19143	csx1	CRISPR-Cas: Subtype III-U	Defense system	CRISPR-Cas
+K19144	csx3	CRISPR-Cas: Subtype III-U	Defense system	CRISPR-Cas
+K19145	csx16	CRISPR-Cas: Subtype III-U	Defense system	CRISPR-Cas
+K19146	csaX	CRISPR-Cas: Subtype III-U	Defense system	CRISPR-Cas
+K01153	hsdR	R-M system: Type I	Defense system	R-M system
+K01154	hsdS	R-M system: Type I	Defense system	R-M system
+K03427	hsdM	R-M system: Type I	Defense system	R-M system
+K01155	E3.1.21.4	R-M system: Type II Restriction enzymes	Defense system	R-M system
+K06223	dam	R-M system: Type II Methyltransferases	Defense system	R-M system
+K13581	ccrM	R-M system: Type II Methyltransferases	Defense system	R-M system
+K07317	K07317	R-M system: Type II Methyltransferases	Defense system	R-M system
+K07318	K07318	R-M system: Type II Methyltransferases	Defense system	R-M system
+K07319	yhdJ	R-M system: Type II Methyltransferases	Defense system	R-M system
+K00571	E2.1.1.72	R-M system: Type II Methyltransferases	Defense system	R-M system
+K00558	DNMT1, dcm	R-M system: Type II Methyltransferases	Defense system	R-M system
+K00590	E2.1.1.113	R-M system: Type II Methyltransferases	Defense system	R-M system
+K24451	zim	R-M system: Type II Methyltransferases	Defense system	R-M system
+K01156	res	R-M system: Type III	Defense system	R-M system
+K07316	mod	R-M system: Type III	Defense system	R-M system
+K07451	mcrA	R-M system: Type IV	Defense system	R-M system
+K07452	mcrB	R-M system: Type IV	Defense system	R-M system
+K19147	mcrC	R-M system: Type IV	Defense system	R-M system
+K07448	mrr	R-M system: Type IV	Defense system	R-M system
+K18920	hokA	TA system: Type I_Hok-Sok	Defense system	TA system
+K18921	hokB	TA system: Type I_Hok-Sok	Defense system	TA system
+K18919	hokC_D	TA system: Type I_Hok-Sok	Defense system	TA system
+K18922	hokE	TA system: Type I_Hok-Sok	Defense system	TA system
+K18870	sokB	TA system: Type I_Hok-Sok	Defense system	TA system
+K18871	sokC	TA system: Type I_Hok-Sok	Defense system	TA system
+K19048	symE	TA system: Type I_SymE-SymR	Defense system	TA system
+K18524	symR	TA system: Type I_SymE-SymR	Defense system	TA system
+K18862	ldrA_B_C_D	TA system: Type I_Ldr-Rdl	Defense system	TA system
+K18863	rdlA_B_C_D	TA system: Type I_Ldr-Rdl	Defense system	TA system
+K19148	tisB	TA system: Type I_TisB-IstR	Defense system	TA system
+K18526	istR	TA system: Type I_TisB-IstR	Defense system	TA system
+K19149	ibsA	TA system: Type I_Ibs-Sib	Defense system	TA system
+K19150	ibsB	TA system: Type I_Ibs-Sib	Defense system	TA system
+K19151	ibsC	TA system: Type I_Ibs-Sib	Defense system	TA system
+K19152	ibsD	TA system: Type I_Ibs-Sib	Defense system	TA system
+K19153	ibsE	TA system: Type I_Ibs-Sib	Defense system	TA system
+K18864	sibA	TA system: Type I_Ibs-Sib	Defense system	TA system
+K18865	sibB	TA system: Type I_Ibs-Sib	Defense system	TA system
+K18867	sibC	TA system: Type I_Ibs-Sib	Defense system	TA system
+K18868	sibD	TA system: Type I_Ibs-Sib	Defense system	TA system
+K18869	sibE	TA system: Type I_Ibs-Sib	Defense system	TA system
+K19154	shoB	TA system: Type I_ShoB-OhsC	Defense system	TA system
+K18872	ohsC	TA system: Type I_ShoB-OhsC	Defense system	TA system
+K19779	ralR	TA system: Type I_RalR-RalA	Defense system	TA system
+K19780	ralA, rcbA	TA system: Type I_RalR-RalA	Defense system	TA system
+K07171	mazF, ndoA, chpA	TA system: Type II_MazF-MazE	Defense system	TA system
+K07172	mazE, chpAI	TA system: Type II_MazF-MazE	Defense system	TA system
+K26981	mazE1	TA system: Type II_MazF-MazE	Defense system	TA system
+K26982	mazE2	TA system: Type II_MazF-MazE	Defense system	TA system
+K26983	mazE3	TA system: Type II_MazF-MazE	Defense system	TA system
+K26984	mazE4	TA system: Type II_MazF-MazE	Defense system	TA system
+K26985	mazE5	TA system: Type II_MazF-MazE	Defense system	TA system
+K26986	mazE6	TA system: Type II_MazF-MazE	Defense system	TA system
+K26987	mazE7	TA system: Type II_MazF-MazE	Defense system	TA system
+K26988	mazE8	TA system: Type II_MazF-MazE	Defense system	TA system
+K26989	mazE9	TA system: Type II_MazF-MazE	Defense system	TA system
+K07723	ndoAI	TA system: Type II_MazF-MazE	Defense system	TA system
+K18841	chpB	TA system: Type II_ChpB-ChpS	Defense system	TA system
+K18842	chpS	TA system: Type II_ChpB-ChpS	Defense system	TA system
+K19155	yhaV	TA system: Type II_YhaV-PrlF	Defense system	TA system
+K19156	prlF	TA system: Type II_YhaV-PrlF	Defense system	TA system
+K06218	relE, stbE	TA system: Type II_RelE/StbE-RelB/StbD	Defense system	TA system
+K18918	relB	TA system: Type II_RelE/StbE-RelB/StbD	Defense system	TA system
+K18923	stbD	TA system: Type II_RelE/StbE-RelB/StbD	Defense system	TA system
+K28297	relB_F	TA system: Type II_RelE/StbE-RelB/StbD	Defense system	TA system
+K19157	yafQ	TA system: Type II_YafQ-dinJ	Defense system	TA system
+K07473	dinJ	TA system: Type II_YafQ-dinJ	Defense system	TA system
+K19158	yoeB	TA system: Type II_YoeB-YefM	Defense system	TA system
+K19159	yefM	TA system: Type II_YoeB-YefM	Defense system	TA system
+K07154	hipA	TA system: Type II_HipA-HipB	Defense system	TA system
+K15773	hipB	TA system: Type II_HipA-HipB	Defense system	TA system
+K07339	hicA	TA system: Type II_HicA-HicB	Defense system	TA system
+K18843	hicB	TA system: Type II_HicA-HicB	Defense system	TA system
+K19160	yafO	TA system: Type II_YafO-YafN	Defense system	TA system
+K19161	yafN	TA system: Type II_YafO-YafN	Defense system	TA system
+K03973	pspC	TA system: Type II_PspC-PspB	Defense system	TA system
+K03970	pspB	TA system: Type II_PspC-PspB	Defense system	TA system
+K19163	ccdB	TA system: Type II_CcdB-CcdA	Defense system	TA system
+K19164	ccdA	TA system: Type II_CcdB-CcdA	Defense system	TA system
+K19092	parE1_3_4	TA system: Type II_ParE-ParD	Defense system	TA system
+K19093	parE2	TA system: Type II_ParE-ParD	Defense system	TA system
+K07746	parD1_3_4	TA system: Type II_ParE-ParD	Defense system	TA system
+K19094	parD2	TA system: Type II_ParE-ParD	Defense system	TA system
+K07341	doc	TA system: Type II_Doc-Phd	Defense system	TA system
+K19165	phd	TA system: Type II_Doc-Phd	Defense system	TA system
+K19166	higB	TA system: Type II_HigB-HigA	Defense system	TA system
+K07334	higB-1	TA system: Type II_HigB-HigA	Defense system	TA system
+K28253	higB1	TA system: Type II_HigB-HigA	Defense system	TA system
+K18831	higA	TA system: Type II_HigB-HigA	Defense system	TA system
+K21498	higA-1	TA system: Type II_HigB-HigA	Defense system	TA system
+K28254	higA1	TA system: Type II_HigB-HigA	Defense system	TA system
+K13651	mqsR	TA system: Type II_MqsR-MqsA	Defense system	TA system
+K13655	mqsA	TA system: Type II_MqsR-MqsA	Defense system	TA system
+K18828	vapC	TA system: Type II_VapC-VapB	Defense system	TA system
+K18829	vapB	TA system: Type II_VapC-VapB	Defense system	TA system
+K28141	vapC1S	TA system: Type II_VapC-VapB	Defense system	TA system
+K28142	vapB1	TA system: Type II_VapC-VapB	Defense system	TA system
+K28255	vapB3	TA system: Type II_VapC-VapB	Defense system	TA system
+K28256	vapB9	TA system: Type II_VapC-VapB	Defense system	TA system
+K28257	vapB12	TA system: Type II_VapC-VapB	Defense system	TA system
+K28147	vapC2S	TA system: Type II_VapC-VapB	Defense system	TA system
+K28148	vapB2	TA system: Type II_VapC-VapB	Defense system	TA system
+K28152	vapB6S	TA system: Type II_VapC-VapB	Defense system	TA system
+K28259	vapB17	TA system: Type II_VapC-VapB	Defense system	TA system
+K28149	vapC4_5_8	TA system: Type II_VapC-VapB	Defense system	TA system
+K28150	vapB4_5	TA system: Type II_VapC-VapB	Defense system	TA system
+K28258	vapB8	TA system: Type II_VapC-VapB	Defense system	TA system
+K28262	vapC7_13_23	TA system: Type II_VapC-VapB	Defense system	TA system
+K28263	vapB7	TA system: Type II_VapC-VapB	Defense system	TA system
+K28264	vapB13	TA system: Type II_VapC-VapB	Defense system	TA system
+K28265	vapB23	TA system: Type II_VapC-VapB	Defense system	TA system
+K28260	vapC10_19_32	TA system: Type II_VapC-VapB	Defense system	TA system
+K28266	vapB10_19	TA system: Type II_VapC-VapB	Defense system	TA system
+K28267	vapB32	TA system: Type II_VapC-VapB	Defense system	TA system
+K28268	vapC14	TA system: Type II_VapC-VapB	Defense system	TA system
+K28269	vapB14	TA system: Type II_VapC-VapB	Defense system	TA system
+K28151	vapC16	TA system: Type II_VapC-VapB	Defense system	TA system
+K28270	vapB16	TA system: Type II_VapC-VapB	Defense system	TA system
+K28277	vapC20	TA system: Type II_VapC-VapB	Defense system	TA system
+K28278	vapB20	TA system: Type II_VapC-VapB	Defense system	TA system
+K28279	vapC22	TA system: Type II_VapC-VapB	Defense system	TA system
+K28280	vapB22	TA system: Type II_VapC-VapB	Defense system	TA system
+K28143	vapC24S	TA system: Type II_VapC-VapB	Defense system	TA system
+K28144	vapB24S	TA system: Type II_VapC-VapB	Defense system	TA system
+K28282	vapC26	TA system: Type II_VapC-VapB	Defense system	TA system
+K28283	vapB26	TA system: Type II_VapC-VapB	Defense system	TA system
+K28272	vapC27_40	TA system: Type II_VapC-VapB	Defense system	TA system
+K28273	vapB27_40	TA system: Type II_VapC-VapB	Defense system	TA system
+K19686	vapC28S	TA system: Type II_VapC-VapB	Defense system	TA system
+K19687	vapB28S	TA system: Type II_VapC-VapB	Defense system	TA system
+K28275	vapC35S	TA system: Type II_VapC-VapB	Defense system	TA system
+K28276	vapB35S	TA system: Type II_VapC-VapB	Defense system	TA system
+K16214	pezT	TA system: Type II_PezT-PezA	Defense system	TA system
+K18830	pezA	TA system: Type II_PezT-PezA	Defense system	TA system
+K21487	yobL	TA system: Type II_YobL-YobK	Defense system	TA system
+K21488	yobK	TA system: Type II_YobL-YobK	Defense system	TA system
+K21489	yokI	TA system: Type II_YokI-YokJ	Defense system	TA system
+K21490	yokJ	TA system: Type II_YokI-YokJ	Defense system	TA system
+K21491	yqcG	TA system: Type II_YqcG-YqcF	Defense system	TA system
+K21492	yqcF	TA system: Type II_YqcG-YqcF	Defense system	TA system
+K21493	yxiD	TA system: Type II_YxiD-YxxD	Defense system	TA system
+K21494	yxxD	TA system: Type II_YxiD-YxxD	Defense system	TA system
+K07062	fitB	TA system: Type II_FitB-FitA	Defense system	TA system
+K21495	fitA	TA system: Type II_FitB-FitA	Defense system	TA system
+K21496	BC_0920	TA system: Type II_BC_0920-BC_0921	Defense system	TA system
+K21497	BC_0921	TA system: Type II_BC_0920-BC_0921	Defense system	TA system
+K06388	spoIISA	TA system: Type II_SpoIISA-SpoIISB	Defense system	TA system
+K06389	spoIISB	TA system: Type II_SpoIISA-SpoIISB	Defense system	TA system
+K28299	tse6	TA system: Type II_Tse6-Tsi6	Defense system	TA system
+K28300	tsi6	TA system: Type II_Tse6-Tsi6	Defense system	TA system
+K19334	tabA	TA system: Type II_related factors	Defense system	TA system
+K13650	mcbA	TA system: Type II_related factors	Defense system	TA system
+K12148	bssS	TA system: Type II_related factors	Defense system	TA system
+K19688	bssR	TA system: Type II_related factors	Defense system	TA system
+K12151	bhsA	TA system: Type II_related factors	Defense system	TA system
+K03531	ftsZ	TA system: Type II_related factors	Defense system	TA system
+K03569	mreB	TA system: Type II_related factors	Defense system	TA system
+K02621	parC	TA system: Type II_related factors	Defense system	TA system
+K02622	parE	TA system: Type II_related factors	Defense system	TA system
+K01885	EARS, gltX	TA system: Type II_related factors	Defense system	TA system
+K07060	nob1	TA system: Type II_related factors	Defense system	TA system
+K19167	abiQ	TA system: Type III_AbiQ	Defense system	TA system
+K18837	cbtA	TA system: Type IV_YeeV-YeeU	Defense system	TA system
+K18838	cbeA	TA system: Type IV_YeeV-YeeU	Defense system	TA system
+K19168	cptA	TA system: Type IV_CptA-CptB	Defense system	TA system
+K09159	cptB	TA system: Type IV_CptA-CptB	Defense system	TA system
+K09144	abiEii	TA system: Type IV_AbiEii-AbiEi	Defense system	TA system
+K28193	abiEi	TA system: Type IV_AbiEii-AbiEi	Defense system	TA system
+K18839	ghoT	TA system: Type V_GhoT-GhoS	Defense system	TA system
+K18840	ghoS	TA system: Type V_GhoT-GhoS	Defense system	TA system
+K28190	socB	TA system: Type VI_SocB-SocA	Defense system	TA system
+K28191	socA	TA system: Type VI_SocB-SocA	Defense system	TA system
+K05839	hha	TA system: Type VII_Hha-TomB	Defense system	TA system
+K19162	tomB	TA system: Type VII_Hha-TomB	Defense system	TA system
+K28188	tglT	TA system: Type VII_TglT-TakA	Defense system	TA system
+K28189	takA	TA system: Type VII_TglT-TakA	Defense system	TA system
+K28186	hepT	TA system: Type VII_HepT-MntA	Defense system	TA system
+K28187	mntA	TA system: Type VII_HepT-MntA	Defense system	TA system
+K28181	sdsR, ryeB	TA system: Type VIII_SdsR-RyeA	Defense system	TA system
+K28182	ryeA	TA system: Type VIII_SdsR-RyeA	Defense system	TA system
+K04487	iscS, NFS1	DNA phosphothiolation system_Sulfur modification	Defense system	DNA P system
+K19169	dndB	DNA phosphothiolation system_Sulfur modification	Defense system	DNA P system
+K19170	dndC	DNA phosphothiolation system_Sulfur modification	Defense system	DNA P system
+K19171	dndD	DNA phosphothiolation system_Sulfur modification	Defense system	DNA P system
+K19172	dndE	DNA phosphothiolation system_Sulfur modification	Defense system	DNA P system
+K19173	dptF	DNA phosphothiolation system_Restriction proteins	Defense system	DNA P system
+K19174	dptG	DNA phosphothiolation system_Restriction proteins	Defense system	DNA P system
+K19175	dptH	DNA phosphothiolation system_Restriction proteins	Defense system	DNA P system

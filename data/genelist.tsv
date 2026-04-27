@@ -1,0 +1,206 @@
+ko	ko_definition	pathway	metabolism
+K07657	"two-component system, OmpR family, phosphate regulon response regulator PhoB"	P regulation	P metabolism
+K01915	glutamine synthetase [EC:6.3.1.2]	Ammonia assimilation	N metabolism
+K00395	"adenylylsulfate reductase, subunit B [EC:1.8.99.2]"	Adenylylsulfate reductase (aprAB)	S metabolism
+K00113	glycerol-3-phosphate dehydrogenase subunit C	P remodelling	P metabolism
+K15876	cytochrome c nitrite reductase small subunit	Dissimilatory nitrite reduction	N metabolism
+K22390	acid phosphatase type 7	P degradation	P metabolism
+K02274	cytochrome c oxidase subunit I [EC:7.1.1.9]	Cytochrome c oxidase (coxA)	Photosystems and ATP
+K02256	cytochrome c oxidase subunit 1 [EC:7.1.1.9]	Cytochrome c oxidase (Cox1)	Photosystems and ATP
+K00655	1-acyl-sn-glycerol-3-phosphate acyltransferase [EC:2.3.1.51]	P remodelling	P metabolism
+K03320	"ammonium transporter, Amt family"	Ammonium transporter (amt)	N metabolism
+K01126	glycerophosphoryl diester phosphodiesterase [EC:3.1.4.46]	P remodelling	P metabolism
+K00175	2-oxoglutarate/2-oxoacid ferredoxin oxidoreductase subunit beta [EC:1.2.7.3 1.2.7.11]	Reverse TCA cycle	C fixation
+K00958	sulfate adenylyltransferase [EC:2.7.7.4]	Sulfate adenylyltransferase (sat)	S metabolism
+K07029	diacylglycerol kinase (ATP) [EC:2.7.1.107]	P remodelling	P metabolism
+K13510	lysophosphatidylcholine acyltransferase / lyso-PAF acetyltransferase [EC:2.3.1.23 2.3.1.67]	P remodelling	P metabolism
+K02712	photosystem II PsbK protein	Photosystem II (psbK)	Photosystems and ATP
+K17227	sulfur-oxidizing protein SoxZ	Sulfur oxidation (soxAXBCYZ)	S metabolism
+K03430	2-aminoethylphosphonate-pyruvate transaminase [EC:2.6.1.37]	P degradation	P metabolism
+K17223	L-cysteine S-thiosulfotransferase [EC:2.8.5.2]	Sulfur oxidation (soxAXBCYZ)	S metabolism
+K17226	sulfur-oxidizing protein SoxY	Sulfur oxidation (soxAXBCYZ)	S metabolism
+K02703	photosystem II P680 reaction center D1 protein [EC:1.10.3.9]	Photosystem II (psbA)	Photosystems and ATP
+K00265	glutamate synthase (NADPH) large chain [EC:1.4.1.13]	Ammonia assimilation	N metabolism
+K00948	ribose-phosphate pyrophosphokinase [EC:2.7.6.1]	PRPP biosynthesis (RPPK)	Central C metabolism
+K01601	ribulose-bisphosphate carboxylase large chain [EC:4.1.1.39]	Calvin cycle	C fixation
+K03306	"inorganic phosphate transporter, PiT family"	P transport	P metabolism
+K02044	phosphonate transport system substrate-binding protein	P transport	P metabolism
+K00266	glutamate synthase (NADPH) small chain [EC:1.4.1.13]	Ammonia assimilation	N metabolism
+K00057	glycerol-3-phosphate dehydrogenase (NAD(P)+) [EC:1.1.1.94]	P remodelling	P metabolism
+K00894	ethanolamine kinase [EC:2.7.1.82]	P remodelling	P metabolism
+K02039	phosphate transport system protein	P regulation	P metabolism
+K17224	S-sulfosulfanyl-L-cysteine sulfohydrolase [EC:3.1.6.20]	Sulfur oxidation (soxAXBCYZ)	S metabolism
+K00981	phosphatidate cytidylyltransferase [EC:2.7.7.41]	P remodelling	P metabolism
+K01637	isocitrate lyase [EC:4.1.3.1]	Glyoxylate cycle (ICL)	Central C metabolism
+K01047	secretory phospholipase A2 [EC:3.1.1.4]	P remodelling	P metabolism
+K13513	lysocardiolipin and lysophospholipid acyltransferase [EC:2.3.1.- 2.3.1.51]	P remodelling	P metabolism
+K06217	phosphate starvation-inducible protein PhoH and related proteins	P regulation	P metabolism
+K01690	phosphogluconate dehydratase [EC:4.2.1.12]	ED pathway (edd)	Central C metabolism
+K00955	bifunctional enzyme CysN/CysC [EC:2.7.7.4 2.7.1.25]	Sulfate adenylyltransferase (sat)	S metabolism
+K08730	phosphatidylserine synthase 2 [EC:2.7.8.29]	P remodelling	P metabolism
+K05306	phosphonoacetaldehyde hydrolase [EC:3.11.1.1]	P degradation	P metabolism
+K01965	propionyl-CoA carboxylase alpha chain [EC:6.4.1.3]	3-hydroxypropionate bi-cycle	C fixation
+K21307	sulfite dehydrogenase (quinone) subunit SoeA [EC:1.8.5.6]	Sulfite dehydrogenase (quinone)	S metabolism
+K07658	"two-component system, OmpR family, alkaline phosphatase synthesis response regulator PhoP"	P regulation	P metabolism
+K00031	isocitrate dehydrogenase [EC:1.1.1.42]	Citric acid cycle (icd)	Central C metabolism
+K00570	phosphatidylethanolamine/phosphatidyl-N-methylethanolamine N-methyltransferase [EC:2.1.1.17 2.1.1.71]	P remodelling	P metabolism
+K00264	glutamate synthase (NADH) [EC:1.4.1.14]	Ammonia assimilation	N metabolism
+K13519	lysophospholipid acyltransferase [EC:2.3.1.51 2.3.1.23 2.3.1.-]	P remodelling	P metabolism
+K00394	"adenylylsulfate reductase, subunit A [EC:1.8.99.2]"	Adenylylsulfate reductase (aprAB)	S metabolism
+K00957	sulfate adenylyltransferase subunit 2 [EC:2.7.7.4]	Sulfate adenylyltransferase (sat)	S metabolism
+K01524	"exopolyphosphatase / guanosine-5'-triphosphate,3'-diphosphate pyrophosphatase [EC:3.6.1.11 3.6.1.40]"	P stock/destock	P metabolism
+K18981	uronate dehydrogenase [EC:1.1.1.203]	Uronate pathway (udh)	Central C metabolism
+K01114	phospholipase C [EC:3.1.4.3]	P remodelling	P metabolism
+K02707	photosystem II cytochrome b559 subunit alpha	Photosystem II (psbE)	Photosystems and ATP
+K06167	"phosphoribosyl 1,2-cyclic phosphate phosphodiesterase [EC:3.1.4.55]"	P degradation	P metabolism
+K00368	nitrite reductase (NO-forming) [EC:1.7.2.1]	Denitrification	N metabolism
+K13507	glycerol-3-phosphate O-acyltransferase / dihydroxyacetone phosphate acyltransferase [EC:2.3.1.15 2.3.1.42]	P remodelling	P metabolism
+K01602	ribulose-bisphosphate carboxylase small chain [EC:4.1.1.39]	Calvin cycle	C fixation
+K07175	PhoH-like ATPase	P regulation	P metabolism
+K01004	phosphatidylcholine synthase [EC:2.7.8.24]	P remodelling	P metabolism
+K14156	choline/ethanolamine kinase [EC:2.7.1.32 2.7.1.82]	P remodelling	P metabolism
+K01966	propionyl-CoA carboxylase beta chain [EC:6.4.1.3 2.1.3.15]	3-hydroxypropionate bi-cycle	C fixation
+K00968	choline-phosphate cytidylyltransferase [EC:2.7.7.15]	P remodelling	P metabolism
+K02305	nitric oxide reductase subunit C	Denitrification	N metabolism
+K21308	sulfite dehydrogenase (quinone) subunit SoeB	Sulfite dehydrogenase (quinone)	S metabolism
+K22831	1-acylglycerol-3-phosphate O-acyltransferase [EC:2.3.1.51]	P remodelling	P metabolism
+K00850	6-phosphofructokinase 1 [EC:2.7.1.11]	Glycolysis (PFK)	Central C metabolism
+K06119	sulfoquinovosyltransferase [EC:2.4.1.-]	P remodelling	P metabolism
+K02040	phosphate transport system substrate-binding protein	P transport	P metabolism
+K21309	sulfite dehydrogenase (quinone) subunit SoeC	Sulfite dehydrogenase (quinone)	S metabolism
+K01077	alkaline phosphatase [EC:3.1.3.1]	P degradation	P metabolism
+K02037	phosphate transport system permease protein	P transport	P metabolism
+K14286	ethanolamine-phosphate phospho-lyase [EC:4.2.3.2]	P remodelling	P metabolism
+K02041	phosphonate transport system ATP-binding protein [EC:7.3.2.2]	P transport	P metabolism
+K00111	glycerol-3-phosphate dehydrogenase [EC:1.1.5.3]	P remodelling	P metabolism
+K18693	diacylglycerol diphosphate phosphatase / phosphatidate phosphatase [EC:3.6.1.75 3.1.3.4]	P remodelling	P metabolism
+K07636	"two-component system, OmpR family, phosphate regulon sensor histidine kinase PhoR [EC:2.7.13.3]"	P regulation	P metabolism
+K16343	calcium-independent phospholipase A2 [EC:3.1.1.4]	P remodelling	P metabolism
+K02697	photosystem I subunit IX	Photosystem I (psaJ)	Photosystems and ATP
+K10944	methane/ammonia monooxygenase subunit A [EC:1.14.18.3 1.14.99.39]	Ammonia monooxygenase (AmoABC)	N metabolism
+K02042	phosphonate transport system permease protein	P transport	P metabolism
+K00550	phosphatidyl-N-methylethanolamine N-methyltransferase [EC:2.1.1.71]	P remodelling	P metabolism
+K10534	nitrate reductase (NAD(P)H) [EC:1.7.1.1 1.7.1.2 1.7.1.3]	Assimilatory nitrate reduction	N metabolism
+K17225	sulfane dehydrogenase subunit SoxC	Sulfur oxidation (soxAXBCYZ)	S metabolism
+K06118	UDP-sulfoquinovose synthase [EC:3.13.1.1]	P remodelling	P metabolism
+K00937	polyphosphate kinase [EC:2.7.4.1]	P stock/destock	P metabolism
+K15728	phosphatidate phosphatase LPIN [EC:3.1.3.4]	P remodelling	P metabolism
+K13517	lysophospholipid acyltransferase 1/2 [EC:2.3.1.51 2.3.1.-]	P remodelling	P metabolism
+K22468	polyphosphate kinase [EC:2.7.4.34]	P stock/destock	P metabolism
+K00994	diacylglycerol cholinephosphotransferase [EC:2.7.8.2]	P remodelling	P metabolism
+K00956	sulfate adenylyltransferase subunit 1 [EC:2.7.7.4]	Sulfate adenylyltransferase (sat)	S metabolism
+K13512	lysophospholipid acyltransferase [EC:2.3.1.23 2.3.1.-]	P remodelling	P metabolism
+K00967	ethanolamine-phosphate cytidylyltransferase [EC:2.7.7.14]	P remodelling	P metabolism
+K00649	glyceronephosphate O-acyltransferase [EC:2.3.1.42]	P remodelling	P metabolism
+K06162	alpha-D-ribose 1-methylphosphonate 5-triphosphate diphosphatase [EC:3.6.1.63]	P degradation	P metabolism
+K00112	glycerol-3-phosphate dehydrogenase subunit B [EC:1.1.5.3]	P remodelling	P metabolism
+K06900	cGAMP-activated phospholipase [EC:3.1.1.32 3.1.1.-]	P remodelling	P metabolism
+K16817	HRAS-like suppressor 3 [EC:3.1.1.32 3.1.1.4]	P remodelling	P metabolism
+K10535	hydroxylamine dehydrogenase [EC:1.7.2.6]	Nitrification	N metabolism
+K00366	ferredoxin-nitrite reductase [EC:1.7.7.1]	Assimilatory nitrate reduction	N metabolism
+K00367	ferredoxin-nitrate reductase [EC:1.7.7.2]	Assimilatory nitrate reduction	N metabolism
+K08176	"MFS transporter, PHS family, inorganic phosphate transporter"	P transport	P metabolism
+K13937	hexose-6-phosphate dehydrogenase [EC:1.1.1.47 3.1.1.31]	Pentose phosphate pathway (G6PD)	Central C metabolism
+K02038	phosphate transport system permease protein	P transport	P metabolism
+K00006	glycerol-3-phosphate dehydrogenase (NAD+) [EC:1.1.1.8]	P remodelling	P metabolism
+K22697	sphingomyelin synthase-related protein 1	P remodelling	P metabolism
+K15231	ATP-citrate lyase beta-subunit [EC:2.3.3.8]	Reverse TCA cycle	C fixation
+K02036	phosphate transport system ATP-binding protein [EC:7.3.2.1]	P transport	P metabolism
+K04714	shingomyelin synthase [EC:2.7.8.27]	P remodelling	P metabolism
+K05929	phosphoethanolamine N-methyltransferase [EC:2.1.1.103]	P remodelling	P metabolism
+K14674	TAG lipase / steryl ester hydrolase / phospholipase A2 / LPA acyltransferase [EC:3.1.1.3 3.1.1.13 3.1.1.4 2.3.1.51]	P remodelling	P metabolism
+K10945	methane/ammonia monooxygenase subunit B	Ammonia monooxygenase (AmoABC)	N metabolism
+K01058	phospholipase A1/A2 [EC:3.1.1.32 3.1.1.4]	P remodelling	P metabolism
+K17222	L-cysteine S-thiosulfotransferase [EC:2.8.5.2]	Sulfur oxidation (soxAXBCYZ)	S metabolism
+K15019	3-hydroxypropionyl-coenzyme A dehydratase [EC:4.2.1.116]	HP/HB cycle	C fixation
+K14621	"phospholipase B1, membrane-associated [EC:3.1.1.4 3.1.1.5]"	P remodelling	P metabolism
+K16368	diacylglycerol kinase (CTP) [EC:2.7.1.174]	P remodelling	P metabolism
+K13623	S-adenosylmethionine-diacylgycerolhomoserine-N-methlytransferase	P remodelling	P metabolism
+K00376	nitrous-oxide reductase [EC:1.7.2.4]	Denitrification	N metabolism
+K07776	"two-component system, OmpR family, response regulator RegX3"	P regulation	P metabolism
+K13621	betaine lipid synthase	P remodelling	P metabolism
+K00551	phosphatidylethanolamine/phosphatidyl-N-methylethanolamine N-methyltransferase [EC:2.1.1.17 2.1.1.71]	P remodelling	P metabolism
+K14430	phosphate transporter	P transport	P metabolism
+K00363	nitrite reductase (NADH) small subunit [EC:1.7.1.15]	Dissimilatory nitrite reduction	N metabolism
+K00362	nitrite reductase (NADH) large subunit [EC:1.7.1.15]	Dissimilatory nitrite reduction	N metabolism
+K13509	lysophosphatidate acyltransferase [EC:2.3.1.51]	P remodelling	P metabolism
+K23753	AMP-polyphosphate phosphotransferase [EC:2.7.4.33]	P stock/destock	P metabolism
+K10946	methane/ammonia monooxygenase subunit C	Ammonia monooxygenase (AmoABC)	N metabolism
+K00370	"nitrate reductase / nitrite oxidoreductase, alpha subunit [EC:1.7.5.1 1.7.99.-]"	Nitrification	N metabolism
+K00901	diacylglycerol kinase (ATP) [EC:2.7.1.107]	P remodelling	P metabolism
+K16322	low-affinity inorganic phosphate transporter	P transport	P metabolism
+K01115	phospholipase D1/2 [EC:3.1.4.4]	P remodelling	P metabolism
+K13515	lysophospholipid acyltransferase 5 [EC:2.3.1.23 2.3.1.-]	P remodelling	P metabolism
+K16818	phospholipase A1 [EC:3.1.1.32]	P remodelling	P metabolism
+K03385	nitrite reductase (cytochrome c-552) [EC:1.7.2.2]	Dissimilatory nitrite reduction	N metabolism
+K14534	4-hydroxybutyryl-CoA dehydratase / vinylacetyl-CoA-Delta-isomerase [EC:4.2.1.120 5.3.3.3]	DC/HB cycle	C fixation
+K16342	cytosolic phospholipase A2 [EC:3.1.1.4]	P remodelling	P metabolism
+K13523	lysophosphatidic acid acyltransferase / lysophosphatidylinositol acyltransferase [EC:2.3.1.51 2.3.1.-]	P remodelling	P metabolism
+K17877	nitrite reductase (NAD(P)H) [EC:1.7.1.4]	Assimilatory nitrate reduction	N metabolism
+K07768	"two-component system, OmpR family, sensor histidine kinase SenX3 [EC:2.7.13.3]"	P regulation	P metabolism
+K02043	"GntR family transcriptional regulator, phosphonate transport system regulatory protein"	P degradation	P metabolism
+K13622	S-adenosylmethionine-diacylglycerol 3-amino-3-carboxypropyl transferase	P remodelling	P metabolism
+K01080	phosphatidate phosphatase [EC:3.1.3.4]	P remodelling	P metabolism
+K13644	choline/ethanolamine phosphotransferase [EC:2.7.8.1 2.7.8.2]	P remodelling	P metabolism
+K00372	assimilatory nitrate reductase catalytic subunit [EC:1.7.99.-]	Assimilatory nitrate reduction	N metabolism
+K02588	nitrogenase iron protein NifH	N fixation	N metabolism
+K02586	nitrogenase molybdenum-iron protein alpha chain	N fixation	N metabolism
+K02591	nitrogenase molybdenum-iron protein beta chain	N fixation	N metabolism
+K00531	nitrogenase delta subunit anfG	N fixation	N metabolism
+K22896	vanadium-dependent nitrogenase alpha chain vnfD	N fixation	N metabolism
+K22897	vanadium-dependent nitrogenase beta chain vnfK	N fixation	N metabolism
+K22898	vanadium nitrogenase delta subunit vnfG	N fixation	N metabolism
+K22899	vanadium nitrogenase iron protein vnfH	N fixation	N metabolism
+K01427	urease URE [3.5.1.5]	Urea metabolism	N metabolism
+K01428	urease subunit alpha ureA [3.5.1.5]	Urea metabolism	N metabolism
+K01429	urease subunit beta ureA [3.5.1.5]	Urea metabolism	N metabolism
+K01430	urease subunit gamma ureA [3.5.1.5]	Urea metabolism	N metabolism
+K14048	urease subunit gamma/beta [3.5.1.5]	Urea metabolism	N metabolism
+K10227	Carbohydrate ABC transporter 	Carbohydrate ABC transporter 	Central C metabolism
+K10439	Carbohydrate ABC transporter 	Carbohydrate ABC transporter 	Central C metabolism
+K02027	Carbohydrate ABC transporter 	Carbohydrate ABC transporter 	Central C metabolism
+K17315	Carbohydrate ABC transporter 	Carbohydrate ABC transporter 	Central C metabolism
+K00036	glucose-6-phosphate dehydrogenase	Pentose phosphate pathway (G6PD)	Central C metabolism
+K02784	ptsH	Phosphotransferase system (PTS)	Central C metabolism
+K00138	Aldehyde dehydrogenase (aldB)	Aldehyde dehydrogenase (aldB)	Central C metabolism
+K00386	Sulfite dehydrogenase (cytochrome) subunit B	Sulfite dehydrogenase (sorB)	S metabolism
+K03520	aerobic carbon-monoxide dehydrogenase large subunit [EC:1.2.5.3]	CO-Oxidation (C1 metabolism)	C metabolism
+K03519	aerobic carbon-monoxide dehydrogenase medium subunit [EC:1.2.5.3]	CO-Oxidation (C1 metabolism)	C metabolism
+K03518	aerobic carbon-monoxide dehydrogenase large subunit [EC:1.2.5.3]	CO-Oxidation (C1 metabolism)	C metabolism
+K16157	methane monooxygenase component A alpha chain [EC:1.14.13.25]	Methane oxidation	C metabolism
+K16158	methane monooxygenase component A beta chain [EC:1.14.13.25]	Methane oxidation	C metabolism
+K16159	methane monooxygenase component A gamma chain [EC:1.14.13.25]	Methane oxidation	C metabolism
+K16160	methane monooxygenase regulatory protein B	Methane oxidation	C metabolism
+K16161	methane monooxygenase component C [EC:1.14.13.25]	Methane oxidation	C metabolism
+K16162	methane monooxygenase component D	Methane oxidation	C metabolism
+K10944	methane/ammonia monooxygenase subunit A [EC:1.14.18.3 1.14.99.39]	Nitrification|Methane oxidation	N metabolism
+K10945	methane/ammonia monooxygenase subunit B	Nitrification|Methane oxidation	N metabolism
+K10946	methane/ammonia monooxygenase subunit C	Nitrification|Methane oxidation	N metabolism
+K20932	hydrazine synthase subunit [EC:1.7.2.7]	anaerobic ammonia oxidizers (anammox bacteria)	N metabolism
+K20933	hydrazine synthase subunit [EC:1.7.2.7]	anaerobic ammonia oxidizers (anammox bacteria)	N metabolism
+K20934	hydrazine synthase subunit [EC:1.7.2.7]	anaerobic ammonia oxidizers (anammox bacteria)	N metabolism
+K20935	hydrazine dehydrogenase [EC:1.7.2.8]	anaerobic ammonia oxidizers (anammox bacteria)	N metabolism
+K18008	[NiFe] hydrogenase small subunit [EC:1.12.2.1]	H2 oxidation	H metabolism
+K00436	NAD-reducing hydrogenase large subunit [EC:1.12.1.2]	H2 oxidation	H metabolism
+K00320	"5,10-methylenetetrahydromethanopterin reductase [EC:1.5.98.2]"	C1 metabolism/Methanogenesis	C metabolism
+K00200	formylmethanofuran dehydrogenase subunit A [EC:1.2.7.12]	C1 metabolism/Methanogenesis	C metabolism
+K00201	formylmethanofuran dehydrogenase subunit B [EC:1.2.7.12]	C1 metabolism/Methanogenesis	C metabolism
+K00202	formylmethanofuran dehydrogenase subunit C [EC:1.2.7.12]	C1 metabolism/Methanogenesis	C metabolism
+K00672	formylmethanofuran--tetrahydromethanopterin N-formyltransferase [EC:2.3.1.101].	C1 metabolism/Methanogenesis	C metabolism
+K01895	acetyl-CoA synthetase [EC:6.2.1.1]	C1 metabolism/Methanogenesis	C metabolism
+K04480	methanol---5-hydroxybenzimidazolylcobamide Co-methyltransferase [EC:2.1.1.90]	C1 metabolism/Methanogenesis	C metabolism
+K00399	methyl-coenzyme M reductase alpha subunit [EC:2.8.4.1]	Methanogenesis	C metabolism
+K03390	heterodisulfide reductase subunit C [EC:1.8.98.1]	C1 metabolism/Methanogenesis	C metabolism
+K14083	trimethylamine---corrinoid protein Co-methyltransferase [EC:2.1.1.250]	C1 metabolism/Methanogenesis	C metabolism
+K00577	tetrahydromethanopterin S-methyltransferase subunit A [EC:2.1.1.86]	C1 metabolism/Methanogenesis	C metabolism
+K00584	tetrahydromethanopterin S-methyltransferase subunit H [EC:2.1.1.86]	C1 metabolism/Methanogenesis	C metabolism
+K18049	methylphosphonate synthase [EC:1.13.11.73]	Phosphonate and phosphinate metabolism	C metabolism
+K00404  	cytochrome c oxidase cbb3-type subunit I	Cytochrome c oxidase (Cox1)	Aerobic respiration
+K02256  	cytochrome c oxidase subunit 1	Cytochrome c oxidase (Cox1)	Aerobic respiration
+K02274  	cytochrome c oxidase subunit I	Cytochrome c oxidase (Cox1)	Aerobic respiration
+K02275  	cytochrome c oxidase subunit II	Cytochrome c oxidase (Cox1)	Aerobic respiration
+K02276  	cytochrome c oxidase subunit III	Cytochrome c oxidase (Cox1)	Aerobic respiration
+K02277  	cytochrome c oxidase subunit IV	Cytochrome c oxidase (Cox1)	Aerobic respiration
+K15408  	cytochrome c oxidase subunit I+III	Cytochrome c oxidase (Cox1)	Aerobic respiration
+K15862  	cytochrome c oxidase cbb3-type subunit I/II	Cytochrome c oxidase (Cox1)	Aerobic respiration
+K27109  	cytochrome c oxidase subunit IV	Cytochrome c oxidase (Cox1)	Aerobic respiration

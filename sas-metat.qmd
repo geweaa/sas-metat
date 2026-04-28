@@ -100,7 +100,7 @@ tpm <- read_tsv("data/metatdenovo/user_assembly.prokka.counts.tsv.gz", show_col_
   ))) %>%
   select(-start, -end,- strand, -length, -chr)
 
-meta <- read_tsv("data/metatdenovo/sample_key.tsv", show_col_types = FALSE) %>%
+meta <- read_tsv("data/sample_key.tsv", show_col_types = FALSE) %>%
   mutate(station = as.character(station)) %>%
   mutate(sample = gsub("R", ".", sample)) %>%
   mutate(sample = factor(sample, levels = c(
@@ -121,50 +121,15 @@ kofam <- read_tsv("data/metatdenovo/user_assembly.prokka.kofamscan-uniq.tsv.gz",
   select(-thrshld, -score)
 ```
 
+
+```{r}
+#| label: read-eggnog
+
+emapper <- read_tsv("data/metatdenovo/user_assembly.prokka.emapper.tsv.gz", show_col_types = F) %>% 
+  select(orf, cog = cog_category)
+```
+
 # Data exploration
-
-## Rarefaction
-
-```{r}
-#| label: rarefaction-amplicons
-# The lowest number of reads in a sample is 4.1 million
-
-rare <- tpm %>%
-  select(-tpm) %>%
-  pivot_wider(names_from = "orf", values_from = "count", values_fill = 0) %>%
-  column_to_rownames("sample") %>%
-  vegan::rarecurve(sample = 4.1e6, step = 1e5, tidy = TRUE) %>%
-  tibble() %>%
-  rename_with(tolower)
-```
-
-```{r}
-#| fig-cap: Rarefaction curves to determine sufficient sequencing depth of the RNA extract
-#| label: fig-rarefaction
-#| out-width: 100%
-
-rare %>%
-  rename(samplesize = sample, sample = site, n.orfs = species) %>%
-  inner_join(meta, by = "sample") %>%
-  ggplot(aes(
-    x = samplesize, 
-    y = n.orfs,
-    colour = layer
-    )) + 
-  geom_line() + scale_color_manual(
-    values = c("10m" = "#899DA4", "chlMax" = "#046C9A"),
-    labels = c("10m" = "10 m", "chlMax" = "Chl. max")
-    ) +
-  labs(x = "No. of sequence reads", y = "Rarefied No. of ORFs") +
-  #scale_x_continuous(labels = c("0", "50.000", "100.000", "150.000")) +
-  theme_tidy(fontsize = 6) +
-  theme(
-    legend.title = element_blank(),
-    legend.position = "inside",
-    legend.position.inside = c(0.85, 0.15)
-  )
-```
-
 ## Percentage of annotated transcripts
 
 ```{r}
@@ -588,7 +553,7 @@ m <- tpm %>%
   rownames_to_column("sample") %>%
   pivot_longer(-1, names_to = "ko", values_to = "hellinger")
 
-m <- hellinger %>% # Create a matrix
+m <- m %>% # Create a matrix
   spread(ko, hellinger) %>%
   mutate(sample = factor(sample, levels = c(
     "S1.1", "S1.2", "S2.1", "S2.2", "S3.1", "S3.2", "S4.1", "S4.2", "S5.1", "S6.1", 
@@ -700,7 +665,7 @@ cogs <- read_tsv("data/cogs.tsv", show_col_types = FALSE) %>%
   rename(cog = cog_category) %>%
   filter(cog %in% c('C','J','P','G','U','M'))
 
-i <- eggnog %>% 
+i <- emapper %>% 
   inner_join(cogs, by = "cog") %>%
   inner_join(tpm, by = "orf") %>%
   inner_join(meta, by = "sample") %>%
@@ -1163,7 +1128,7 @@ px
 ```
 
 ```{r}
-#| label: fig-defense
+#| label: fig-osmoregulation
 #| fig-cap: KEGG orthologs involved in osmoregulation or the regulation of osmoregulation. Each bar shows the summed tpm (n = 10) for the depth layers. Showing the ten most relevant orders while grouping low-abundant lineages and transcripts without taxonomy as "Other". The x-axis was transformed with a square-root to also visualize KOs with a low tpm.
 
 lab <- d %>%
@@ -1199,7 +1164,7 @@ py
 ```
 
 ```{r}
-#| label: fig-defense
+#| label: fig-repair
 #| fig-cap: KEGG orthologs involved in osmoregulation or the regulation of osmoregulation. Each bar shows the summed tpm (n = 10) for the depth layers. Showing the ten most relevant orders while grouping low-abundant lineages and transcripts without taxonomy as "Other". The x-axis was transformed with a square-root to also visualize KOs with a low tpm.
 
 lab <- d %>%

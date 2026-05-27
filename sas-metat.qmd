@@ -52,7 +52,29 @@ library(grateful)
 #| label: setup
 #| include: false
 
-source("../Protocols/theme.R")
+theme_tidy <- function(fontsize = 6, axisface = "plain", legend = "right") {
+  theme(
+    # Text elements
+    axis.title.x = element_text(colour = "black", size = fontsize, face = axisface),
+    axis.title.y = element_text(colour = "black", size = fontsize, face = axisface, angle = 90),
+    axis.text.x = element_text(colour = "black", size = fontsize, face = axisface),
+    axis.text.y = element_text(colour = "black", size = fontsize, face = axisface),
+    # Legend elements
+    legend.position = legend,
+    #legend.box.background = element_blank(),
+    legend.text = element_text(colour = "black", size = fontsize),
+    legend.title = element_text(size = fontsize, colour = "black", hjust = 0),
+    legend.key = element_rect(fill = "transparent", linewidth = 0),
+    panel.background = element_blank(),
+    panel.border = element_rect(fill = "transparent", linewidth = 0.75, colour = "#000000"),
+    panel.grid = element_blank(),
+    plot.background = element_rect(fill = "white", linewidth = 0),
+    plot.tag = element_text(size = 8, colour = "black", face = "bold"),
+    strip.placement = "outside",
+    strip.background = element_blank(),
+    strip.text = element_text(colour = "black", size = fontsize, hjust = 0.5)
+  )
+}
 
 knitr::opts_chunk$set(cache = TRUE)
 ```

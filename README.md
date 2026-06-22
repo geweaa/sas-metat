@@ -1,1 +1,12 @@
-This repository contains the R scripts used to analyze the metatranscriptomes discussed in the manuscript 'Low prokaryotic growth efficiency enhances the carbon demand estimate for the Central Arctic Ocean' by Ashish Verma et al. The raw data (20 metatranscriptomes) were deposited at the European Nucleotide Archive (https://www.ebi.ac.uk/ena) with PRJEB64858 as accession id. The file ```sample_key.tsv``` can be used to link the accessions to the library id's. The raw data consists of the tpm of each ORF (```user_assembly.prokka.counts.tsv.gz```), the assigned taxonomy (```gtdb_ncbi_merged.tsv.gz```), and the functional annotation (```user_assembly.prokka.kofamscan-uniq.tsv.gz```). These files have been deposited at https://doi.org/10.6084/m9.figshare.32112655. The R code to import and analyze these files is included in ```sas-metat.qmd```. The release of this repository was uploaded to Zenodo with 10.5281/zenodo.19852290 as a DOI.
+This repository contains the R scripts used to analyze the metatranscriptomes discussed in the manuscript 'Low prokaryotic growth efficiency enhances the carbon demand estimate for the Central Arctic Ocean' by Ashish Verma et al. 
+
+The raw data (20 metatranscriptomes) were deposited at the [European Nucleotide Archive](https://www.ebi.ac.uk/ena) with PRJEB64858 as accession id. The following files are required in the R script ```sas-metat.qmd```. Files marked with an asterix have been deposited in [Figshare](https://doi.org/10.6084/m9.figshare.32112655).
+
+* Metadata including accession id's and sequence library id's: ```sample_key.tsv```
+* Read coverage (in tpm) of each ORF: ```user_assembly.prokka.counts.tsv.gz```*
+* Functional annotation: ```user_assembly.prokka.kofamscan-uniq.tsv.gz```* and ```user_assembly.prokka.emapper.tsv.gz```*
+* Taxonomic annotation (with both NCBI and GTDB as references): ```gtdb_ncbi_merged.tsv.gz```*
+* Gene lists: ```genelist.tsv```, ```genelist_maintenance.tsv```, and ```morphology_genes.tsv.gz```
+
+A comparison was done with the metatranscriptome data (```KO_metaT.norm.tsv.gz```) from [Salazar et al. (2019)](https://doi.org/10.1016/j.cell.2019.10.014) using non-metric dimensional scaling (NMDS) while including samples from the South Atlantic Ocean, North Atlantic Ocean, and Arctic Ocean. For this, the files ```tara-kos-metat.tsv.gz``` and ```tara-meta.tsv``` are required and these can be found in the metatdenovo subdirectory.
+

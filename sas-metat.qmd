@@ -22,7 +22,7 @@ embed-resources: true
 keep_md: false
 encoding: "UTF-8"
 other-links:
-      - text: GitHub repo (private for now)
+      - text: GitHub repo
         href: https://github.com/geweaa/sas-metat
       - text: Nf-core/metatdenovo
         href: https://nf-co.re/metatdenovo/1.0.1/
@@ -1242,5 +1242,69 @@ pz
 
 ```{r}
 ggsave(filename = "figures/maintenance.pdf", width = 180, height = 140, units = "mm")
+```
+
+
+# Comparison with Tara Oceans
+
+```{r}
+#| label: import-tara
+
+samples <- read_tsv('data/metatdenovo/tara-meta.tsv', col_types = 'cdc')
+
+tara <- read_tsv('data/metatdenovo/tara-kos-metat.tsv.gz', col_types = 'ccd')
+
+md <- meta %>% 
+  mutate(region = 'CAO') %>% 
+  select(sample, depth, region) %>% 
+  rbind(samples) %>% 
+  mutate(region = case_when(
+    grepl('South Atlantic Ocean', region) ~ 'SAO',
+    grepl('North Atlantic Ocean', region) ~ 'NAO',
+    grepl('Arctic Ocean', region) ~ 'AO',
+    .default = 'CAO'
+  ))
+```
+
+
+```{r}
+#| label: nmds-comparison
+
+set.seed(999)
+
+nmds <- tpm %>% 
+  inner_join(kofam, by = 'orf') %>%
+  select(sample, ko) %>%
+  rbind(tara %>% select(sample, ko)) %>%
+  # Occurrence of each KO within each sample
+  group_by(sample, ko) %>% summarise(n = n(), .groups = 'drop') %>% 
+  # Typical transformation for vegan library
+  pivot_wider(names_from = 'ko', values_from = 'n', values_fill = 0) %>% 
+  column_to_rownames('sample') %>% 
+  vegan::metaMDS()
+
+scores <- vegan::scores(nmds)$sites %>%
+  as.data.frame() %>%
+  rownames_to_column('sample') %>% 
+  left_join(md, by = 'sample')
+```
+
+
+```{r}
+#| label: plot-nmds-comparison
+
+scores %>% 
+  ggplot(aes(
+    x = NMDS1,
+    y = NMDS2,
+    color = region,
+    size = depth
+  )) + geom_point() +
+  theme_bw()
+```
+
+
+```{r}
+ggsave('figures/comparison-tara.pdf', width = 12, height = 12, units = 'cm')
 ```
 

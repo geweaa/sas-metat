@@ -130,6 +130,8 @@ meta <- read_tsv("data/sample_key.tsv", show_col_types = FALSE) %>%
     "S5.2", "S6.2", "S7.1", "S7.2", "S8.1", "S8.2", "S9.1", "S9.2", "S10.1", "S10.2"
   ))) %>%
   mutate(layer = factor(layer, levels = c("10m", "chlMax")))
+
+genelist <- read_tsv('data/genelist-merged.tsv.gz', col_types = 'cccc')
 ```
 
 In total, there are `r nrow(meta)` metatranscriptomes from five stations. At every station, samples were taken in duplicates from 10 m depth and from chl. max. On average, each sample has `r round(mean(meta$mreads), digits = 1)` million reads (sd `r sd(meta$mreads) %>% round(digits = 1)`, n = 20). Off all the transcripts, 53.0 % was functionally annotated (Eggnog mapper), 36.5 % was functionally annotated including a KO reference, 51.7 % of the transcripts was annotated on phylum level, 48.0 % on order level, 43.5 % on genus level, and 32.7 % on species level.
@@ -147,8 +149,7 @@ kofam <- read_tsv("data/metatdenovo/user_assembly.prokka.kofamscan-uniq.tsv.gz",
 ```{r}
 #| label: read-eggnog
 
-emapper <- read_tsv("data/metatdenovo/user_assembly.prokka.emapper.tsv.gz", show_col_types = F) %>% 
-  select(orf, cog = cog_category)
+emapper <- read_tsv("data/metatdenovo/emapper-cogs.tsv.gz", col_types = 'ccc')
 ```
 
 # Data exploration
@@ -661,7 +662,7 @@ p.rda
 ggsave(filename = "figures/rda.pdf", width = 180, height = 80, units = "mm")
 ```
 
-## Broad overview community functions using COG categories
+# Broad overview community functions using COG categories
 
 ```{r}
 cols.order <- c( # Sorted on abundance
@@ -683,12 +684,8 @@ cols.order <- c( # Sorted on abundance
 ```{r}
 #| label: read-cogs
 
-cogs <- read_tsv("data/cogs.tsv", show_col_types = FALSE) %>%
-  rename(cog = cog_category) %>%
-  filter(cog %in% c('C','J','P','G','U','M'))
-
 i <- emapper %>% 
-  inner_join(cogs, by = "cog") %>%
+  filter(cog %in% c('C','J','P','G','U','M')) %>% 
   inner_join(tpm, by = "orf") %>%
   inner_join(meta, by = "sample") %>%
   inner_join(tax, by = "orf") %>%
@@ -735,6 +732,7 @@ i %>%
   )
 ```
 
+
 ```{r}
 ggsave('figures/cogs-stations.pdf', width = 180, height = 140, units = 'mm')
 ```
@@ -775,13 +773,6 @@ cols.ko <- c( # Sorted on abundance
 ```
 
 
-```{r}
-#| label: read-genelist
-
-k <- read_tsv('data/genelist.tsv', col_types = 'cccc') %>%
-  filter(pathway != 'Remodelling')
-```
-
 
 ```{r}
 #| label: filter-kos
@@ -789,34 +780,19 @@ k <- read_tsv('data/genelist.tsv', col_types = 'cccc') %>%
 kos <- kofam %>% 
   filter(evalue < 1e-3) %>%
   # Use only the KOs from the gene list
-  inner_join(k, by = 'ko') %>%
+  inner_join(genelist, by = 'ko', relationship = 'many-to-many') %>% filter(category == 'Metabolism') %>% 
   left_join(tax, by = "orf") %>%
   replace_na(list("domain" = "Bacteria", "order" = "Not annotated", "phylum" = "Not annotated")) %>%
   filter(domain %in% c("Bacteria", "Archaea")) %>%
   # Add the tpm for each ORF and add the metadata
-  inner_join(tpm, by = "orf") %>%
+  inner_join(tpm, by = "orf", relationship = 'many-to-many') %>%
   inner_join(meta, by = "sample") %>%
   mutate(
     order = if_else(order %in% names(cols.ko), order, "Other"),
     order = factor(order, levels = names(cols.ko))
     ) %>%
   # Sum the tpm 
-  group_by(pathway, metabolism, layer, order) %>% summarise(tpm = sum(tpm), .groups = "drop")
-```
-
-
-```{r}
-kofam %>% 
-  filter(evalue < 1e-3) %>%
-  # Use only the KOs from the gene list
-  inner_join(k, by = 'ko') %>%
-  left_join(tax, by = "orf") %>%
-  replace_na(list("domain" = "Bacteria", "order" = "Not annotated", "phylum" = "Not annotated")) %>%
-  filter(domain %in% c("Bacteria", "Archaea")) %>%
-  # Add the tpm for each ORF and add the metadata
-  inner_join(tpm, by = "orf") %>%
-  filter(metabolism %in% c('N metabolism','P metabolism','Central C metabolism')) %>%
-  group_by(order) %>% summarise(n = sum(tpm)) %>% slice_max(n, n = 11)
+  group_by(pathway, subcategory, layer, order) %>% summarise(tpm = sum(tpm), .groups = "drop")
 ```
 
 
@@ -825,7 +801,7 @@ kofam %>%
 #| label: fig-central-c
 
 p1 <- kos %>% 
-  filter(metabolism == "Central C metabolism") %>%
+  filter(subcategory == "Central C metabolism") %>%
   filter(!pathway %in% c('Uronate pathway (udh)','ED pathway (edd)','PRPP biosynthesis (RPPK)')) %>%
   ggplot(aes(
     x = tpm, 
@@ -849,7 +825,7 @@ The genes listed below are typically catalyze the rate limiting step of the path
 ```{r}
 #| label: fig-n-metabolism
 
-i <- k %>%
+i <- genelist %>%
   filter(pathway == 'N fixation') %>%
   mutate(
     layer = '10m',
@@ -857,11 +833,11 @@ i <- k %>%
     tpm = 0
   ) %>%
   mutate(layer = if_else(ko == 'K02588', 'chlMax', layer)) %>%
-  select(-ko, -ko_definition)
+  select(-ko, -category)
   
 
 p2 <- kos %>% 
-  filter(metabolism == "N metabolism") %>%
+  filter(subcategory == "N metabolism") %>%
   rbind(i) %>%
   mutate(pathway = if_else(pathway == 'Denitrification', 'Nitrite reductase (nirK)', pathway)) %>%
   filter(pathway != 'Urea metabolism') %>%
@@ -888,7 +864,7 @@ p2
 #| label: fig-p-metabolism
 
 p3 <- kos %>% 
-  filter(metabolism == "P metabolism") %>%
+  filter(subcategory == "P metabolism") %>%
   ggplot(aes(
     x = tpm, 
     y = paste(pathway, layer) %>% fct_rev(),
@@ -959,18 +935,18 @@ cols.order <- c( # Sorted on abundance
 ```{r}
 #| label: KO filter morphology
 
-kos <- read_tsv('data/morphology_genes.tsv.gz', col_types = 'ccdccc')
-
-kos <- kos %>%
+kos <- genelist %>%
+  filter(category == 'Morphology') %>% 
+  inner_join(kofam, by = 'ko') %>% 
   inner_join(tax, by = "orf") %>% 
   inner_join(tpm, by = "orf") %>% 
   inner_join(meta, by = "sample") %>%
   replace_na(list("order" = "Other")) %>%
   mutate(order = if_else(order %in% names(cols.order), order, "Other")) %>%
-  group_by(layer, label, order, category) %>% summarise(tpm = sum(tpm), .groups = "drop") %>%
+  group_by(layer, pathway, order, subcategory) %>% summarise(tpm = sum(tpm), .groups = "drop") %>%
   mutate(order = factor(order, names(cols.order))) %>%
   mutate(i = if_else(
-     layer == "10m", true = label, false = paste(label, layer)
+     layer == "10m", true = pathway, false = paste(pathway, layer)
    ))
 ```
 
@@ -987,7 +963,7 @@ kos %>%
 
 ```{r}
 lab <- kos %>%
-  filter(category == "EPS biosynthesis") %>%
+  filter(subcategory == "EPS biosynthesis") %>%
   arrange(i) %>%
   select(i) %>%
   distinct() %>%
@@ -995,7 +971,7 @@ lab <- kos %>%
   pull(i) %>% rev()
 
 p1 <- kos %>%
-  filter(category == "EPS biosynthesis") %>%
+  filter(subcategory == "EPS biosynthesis") %>%
   ggplot(aes(
     x = tpm, 
     y = fct_rev(i),
@@ -1021,7 +997,7 @@ p1
 
 ```{r}
 lab <- kos %>%
-  filter(category == "Vesicle formation") %>%
+  filter(subcategory == "Vesicle formation") %>%
   arrange(i) %>%
   select(i) %>%
   distinct() %>%
@@ -1029,7 +1005,7 @@ lab <- kos %>%
   pull(i) %>% rev()
 
 p2 <- kos %>%
-  filter(category == "Vesicle formation") %>%
+  filter(subcategory == "Vesicle formation") %>%
   ggplot(aes(
     x = tpm, 
     y = fct_rev(i),
@@ -1055,7 +1031,7 @@ p2
 
 ```{r}
 lab <- kos %>%
-  filter(category == "External appendages and membrane extensions") %>%
+  filter(subcategory == "External appendages and membrane extensions") %>%
   arrange(i) %>%
   select(i) %>%
   distinct() %>%
@@ -1063,7 +1039,7 @@ lab <- kos %>%
   pull(i) %>% rev()
 
 p3 <- kos %>%
-  filter(category == "External appendages and membrane extensions") %>%
+  filter(subcategory == "External appendages and membrane extensions") %>%
   ggplot(aes(
     x = tpm, 
     y = fct_rev(i),
@@ -1091,13 +1067,8 @@ p3
 # Osmoregulation
 
 ```{r}
-d <- read_tsv('data/genelist_maintenance.tsv', col_types = 'c') 
-```
-
-
-
-```{r}
-d <- d %>%
+d <- genelist %>%
+  filter(!category %in% c('Metabolism', 'Morphology')) %>% 
   left_join(kofam, by = "ko", relationship = "many-to-many") %>%
   inner_join(tax, by = "orf") %>%
   inner_join(tpm, by = "orf") %>%

@@ -1,0 +1,9 @@
+project: naiss2024-22-406
+input: 'input.csv'
+outdir: 'output'
+email: 'george.westmeijer@umu.se'
+sequence_filter: '/proj/sllstore2017037/nobackup/emelie/SILVA_138.1_allrRNAref_NR99_tax.fasta'
+eggnog_dbpath: '/proj/snic2020-16-76/nobackup/data/eggnog-mapper/'
+skip_kofamscan: true
+eukulele_dbpath: '/proj/snic2020-16-76/nobackup/data/eukulele/gtdb/'
+orf_caller: 'Prokka'

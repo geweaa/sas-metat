@@ -1,4 +1,4 @@
-This repository contains the R scripts used to analyze the metatranscriptomes discussed in the manuscript 'Low prokaryotic growth efficiency enhances the carbon demand estimate for the Central Arctic Ocean' by Ashish Verma et al. 
+This repository contains the R script used to analyze the metatranscriptomes discussed in the manuscript 'Low prokaryotic growth efficiency enhances the carbon demand estimate for the Central Arctic Ocean' by Ashish Verma et al. 
 
 The raw data (20 metatranscriptomes) were deposited at the [European Nucleotide Archive](https://www.ebi.ac.uk/ena) with PRJEB64858 as accession id. The following files are required in the R script ```sas-metat.qmd```. Files marked with an asterix have been deposited in [Figshare](https://doi.org/10.6084/m9.figshare.32112655).
 

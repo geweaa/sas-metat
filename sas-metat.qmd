@@ -64,7 +64,7 @@ theme_tidy <- function(fontsize = 6, axisface = "plain", legend = "right") {
     #legend.box.background = element_blank(),
     legend.text = element_text(colour = "black", size = fontsize),
     legend.title = element_text(size = fontsize, colour = "black", hjust = 0),
-    legend.key = element_rect(fill = "transparent", linewidth = 0),
+    #legend.key = element_rect(fill = "transparent", linewidth = 0,),
     panel.background = element_blank(),
     panel.border = element_rect(fill = "transparent", linewidth = 0.75, colour = "#000000"),
     panel.grid = element_blank(),
@@ -237,11 +237,11 @@ tpm %>%
   annotate("segment", x = 14.55, xend = 16.45, y = -30000, yend = -30000, color = "#046C9A") +
   annotate("segment", x = 16.55, xend = 18.45, y = -30000, yend = -30000, color = "#78B7C5") +
   annotate("segment", x = 18.55, xend = 20.45, y = -30000, yend = -30000, color = "#046C9A") +
-  annotate("label", x = 2.5, y = -30000, label = "5", label.size = 0, size = 6/.pt) +
-  annotate("label", x = 6.5, y = -30000, label = "26", label.size = 0, size = 6/.pt) +
-  annotate("label", x =10.5, y = -30000, label = "42", label.size = 0, size = 6/.pt) +
-  annotate("label", x =14.5, y = -30000, label = "53", label.size = 0, size = 6/.pt) +
-  annotate("label", x =18.5, y = -30000, label = "56", label.size = 0, size = 6/.pt)
+  annotate("label", x = 2.5, y = -30000, label = "5", linewidth = 0, size = 6/.pt) +
+  annotate("label", x = 6.5, y = -30000, label = "26", linewidth = 0, size = 6/.pt) +
+  annotate("label", x =10.5, y = -30000, label = "42", linewidth = 0, size = 6/.pt) +
+  annotate("label", x =14.5, y = -30000, label = "53", linewidth = 0, size = 6/.pt) +
+  annotate("label", x =18.5, y = -30000, label = "56", linewidth = 0, size = 6/.pt)
 ```
 
 # Community composition
@@ -332,11 +332,11 @@ p.order <- tpm %>%
   annotate("segment", x = 14.55, xend = 16.45, y = -25000, yend = -25000, color = "#046C9A") +
   annotate("segment", x = 16.55, xend = 18.45, y = -25000, yend = -25000, color = "#78B7C5") +
   annotate("segment", x = 18.55, xend = 20.45, y = -25000, yend = -25000, color = "#046C9A") +
-  annotate("label", x = 2.5, y = -25000, label = "Station 5", label.size = 0, size = 5/.pt) +
-  annotate("label", x = 6.5, y = -25000, label = "26", label.size = 0, size = 5/.pt) +
-  annotate("label", x =10.5, y = -25000, label = "42", label.size = 0, size = 5/.pt) +
-  annotate("label", x =14.5, y = -25000, label = "53", label.size = 0, size = 5/.pt) +
-  annotate("label", x =18.5, y = -25000, label = "56", label.size = 0, size = 5/.pt)
+  annotate("label", x = 2.5, y = -25000, label = "Station 5", linewidth = 0, size = 5/.pt) +
+  annotate("label", x = 6.5, y = -25000, label = "26", linewidth = 0, size = 5/.pt) +
+  annotate("label", x =10.5, y = -25000, label = "42", linewidth = 0, size = 5/.pt) +
+  annotate("label", x =14.5, y = -25000, label = "53", linewidth = 0, size = 5/.pt) +
+  annotate("label", x =18.5, y = -25000, label = "56", linewidth = 0, size = 5/.pt)
 
 p.order
 ```
@@ -428,11 +428,11 @@ p.phylum <- tpm %>%
   annotate("segment", x = 14.55, xend = 16.45, y = -30000, yend = -30000, color = "#046C9A") +
   annotate("segment", x = 16.55, xend = 18.45, y = -30000, yend = -30000, color = "#78B7C5") +
   annotate("segment", x = 18.55, xend = 20.45, y = -30000, yend = -30000, color = "#046C9A") +
-  annotate("label", x = 2.5, y = -30000, label = "Station 5", label.size = 0, size = 5/.pt) +
-  annotate("label", x = 6.5, y = -30000, label = "26", label.size = 0, size = 5/.pt) +
-  annotate("label", x =10.5, y = -30000, label = "42", label.size = 0, size = 5/.pt) +
-  annotate("label", x =14.5, y = -30000, label = "53", label.size = 0, size = 5/.pt) +
-  annotate("label", x =18.5, y = -30000, label = "56", label.size = 0, size = 5/.pt)
+  annotate("label", x = 2.5, y = -30000, label = "Station 5", linewidth = 0, size = 5/.pt) +
+  annotate("label", x = 6.5, y = -30000, label = "26", linewidth = 0, size = 5/.pt) +
+  annotate("label", x =10.5, y = -30000, label = "42", linewidth = 0, size = 5/.pt) +
+  annotate("label", x =14.5, y = -30000, label = "53", linewidth = 0, size = 5/.pt) +
+  annotate("label", x =18.5, y = -30000, label = "56", linewidth = 0, size = 5/.pt)
 
 p.phylum
 ```
@@ -528,11 +528,11 @@ p.genus <- tpm %>%
   annotate("segment", x = 14.55, xend = 16.45, y = -30000, yend = -30000, color = "#046C9A") +
   annotate("segment", x = 16.55, xend = 18.45, y = -30000, yend = -30000, color = "#78B7C5") +
   annotate("segment", x = 18.55, xend = 20.45, y = -30000, yend = -30000, color = "#046C9A") +
-  annotate("label", x = 2.5, y = -30000, label = "Station 5", label.size = 0, size = 5/.pt) +
-  annotate("label", x = 6.5, y = -30000, label = "26", label.size = 0, size = 5/.pt) +
-  annotate("label", x =10.5, y = -30000, label = "42", label.size = 0, size = 5/.pt) +
-  annotate("label", x =14.5, y = -30000, label = "53", label.size = 0, size = 5/.pt) +
-  annotate("label", x =18.5, y = -30000, label = "56", label.size = 0, size = 5/.pt)
+  annotate("label", x = 2.5, y = -30000, label = "Station 5", linewidth = 0, size = 5/.pt) +
+  annotate("label", x = 6.5, y = -30000, label = "26", linewidth = 0, size = 5/.pt) +
+  annotate("label", x =10.5, y = -30000, label = "42", linewidth = 0, size = 5/.pt) +
+  annotate("label", x =14.5, y = -30000, label = "53", linewidth = 0, size = 5/.pt) +
+  annotate("label", x =18.5, y = -30000, label = "56", linewidth = 0, size = 5/.pt)
 
 p.genus
 ```
@@ -627,13 +627,13 @@ p.rda <- rda$CCA$wa %>% data.frame() %>% tibble::rownames_to_column('sample') %>
     ) +
   geom_label(
     data = lab, mapping = aes(x = RDA1/8, y = RDA2/8, label = label),
-    size = 5/.pt, parse = F, label.size = 0
+    size = 5/.pt, parse = F, linewidth = 0
     ) + 
   # Add R-squared
   annotate("text", x = Inf, y = -Inf, 
            label = "paste(R ^ 2-adj, \" = 0.56\")", 
            size = 5/.pt, vjust = -0.5, hjust = 1.05, parse = TRUE) +
-  scale_color_manual(values = cols.layer, labels = c("10 m", "Chl. max"), name = "") +  
+  scale_color_manual(values = cols.layer, labels = c("10 m", "Chl. a max"), name = "") +  
   scale_fill_manual(values = alpha(cols.layer, alpha = 0.2), guide = "none") +      
   theme_tidy(fontsize = 5) +
   theme(
@@ -840,7 +840,11 @@ p2 <- kos %>%
   filter(subcategory == "N metabolism") %>%
   rbind(i) %>%
   mutate(pathway = if_else(pathway == 'Denitrification', 'Nitrite reductase (nirK)', pathway)) %>%
-  filter(pathway != 'Urea metabolism') %>%
+  filter(
+    pathway != 'Urea metabolism' & 
+      pathway != 'Nitrification|Methane oxidation' &
+      pathway != 'anaerobic ammonia oxidizers (anammox bacteria)'
+    ) %>%
   ggplot(aes(
     x = tpm, 
     y = paste(pathway, layer) %>% fct_rev(),
@@ -923,7 +927,7 @@ cols.order <- c( # Sorted on abundance
   "Puniceispirillales_A" = "#9986A5",
   "PS1" = "#FAEFD1",
   "Rhodobacterales" = "#00A08A",
-  "SAR86" = "#D5D5D3",
+  "SAR86" = "#1B5331",
   "Burkholderiales" = "#78B7C5",
   "UBA8366" = "#A2A475",
   "Flavobacteriales" = "#D8B70A",
